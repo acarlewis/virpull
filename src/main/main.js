@@ -1,7 +1,8 @@
 import path from 'node:path';
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell, nativeTheme } from 'electron';
 import started from 'electron-squirrel-startup';
 import { registerIpcHandlers } from './ipc.js';
+import * as settings from './settings.js';
 
 // MAIN_WINDOW_VITE_DEV_SERVER_URL / MAIN_WINDOW_VITE_NAME are bare globals
 // textually injected by @electron-forge/plugin-vite's esbuild `define` at
@@ -16,11 +17,16 @@ let mainWindow = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 520,
-    height: 760,
-    minWidth: 460,
-    minHeight: 640,
-    title: 'Video Downloader',
+    width: 880,
+    height: 700,
+    minWidth: 720,
+    minHeight: 480,
+    title: 'VirPull',
+    // In a packaged build the .exe already has this icon embedded (see
+    // packagerConfig.icon in forge.config.js), so the taskbar picks it up
+    // automatically. In dev mode Electron's own icon would show instead
+    // unless we set it explicitly here.
+    icon: app.isPackaged ? undefined : path.join(app.getAppPath(), 'build', 'icon.ico'),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -53,6 +59,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  const { theme } = settings.load();
+  nativeTheme.themeSource = theme;
   createWindow();
   registerIpcHandlers(mainWindow);
 });

@@ -9,14 +9,16 @@ module.exports = {
     // next to the packaged app (resources/binaries) instead of inside the
     // asar archive, since they must be spawned as real executables.
     extraResource: ['resources/binaries'],
-    name: 'Video Downloader'
+    name: 'VirPull',
+    icon: 'build/icon'
   },
   rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
       config: {
-        name: 'video_downloader'
+        name: 'virpull',
+        setupIcon: 'build/icon.ico'
       }
     },
     {

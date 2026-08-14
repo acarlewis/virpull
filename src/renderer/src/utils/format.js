@@ -30,3 +30,41 @@ export function formatPercent(percent) {
   if (percent === null || percent === undefined || Number.isNaN(percent)) return 0;
   return Math.min(100, Math.max(0, Math.round(percent)));
 }
+
+const STATUS_LABELS = {
+  queued: 'Queued',
+  starting: 'Starting…',
+  'fetching-info': 'Fetching info…',
+  downloading: 'Downloading…',
+  merging: 'Merging…',
+  'extracting-audio': 'Extracting audio…',
+  processing: 'Finalizing…',
+  'already-downloaded': 'Already downloaded',
+  finished: 'Complete',
+  error: 'Error',
+  cancelled: 'Cancelled'
+};
+
+export function statusLabel(status) {
+  return STATUS_LABELS[status] ?? status ?? '';
+}
+
+const ACTIVE_STATUSES = new Set([
+  'starting',
+  'fetching-info',
+  'downloading',
+  'merging',
+  'extracting-audio',
+  'processing',
+  'already-downloaded'
+]);
+
+export function isActiveStatus(status) {
+  return ACTIVE_STATUSES.has(status);
+}
+
+const INDETERMINATE_STATUSES = new Set(['starting', 'fetching-info', 'merging', 'extracting-audio', 'processing']);
+
+export function isIndeterminateStatus(status) {
+  return INDETERMINATE_STATUSES.has(status);
+}

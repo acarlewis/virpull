@@ -2,10 +2,10 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 // Only a fixed, whitelisted set of channels may be subscribed to or invoked
 // from the renderer. No raw ipcRenderer object is ever exposed.
-const PROGRESS_CHANNELS = ['download:progress', 'download:status', 'download:complete', 'download:error'];
+const QUEUE_CHANNELS = ['queue:item-updated', 'queue:item-complete'];
 
 function subscribe(channel, callback) {
-  if (!PROGRESS_CHANNELS.includes(channel)) return () => {};
+  if (!QUEUE_CHANNELS.includes(channel)) return () => {};
   const listener = (_event, payload) => callback(payload);
   ipcRenderer.on(channel, listener);
   return () => ipcRenderer.removeListener(channel, listener);
@@ -22,14 +22,13 @@ contextBridge.exposeInMainWorld('api', {
   checkBinaries: () => ipcRenderer.invoke('binaries:check'),
   updateYtDlp: () => ipcRenderer.invoke('binaries:update-ytdlp'),
 
-  startDownload: (options) => ipcRenderer.invoke('download:start', options),
-  cancelDownload: () => ipcRenderer.invoke('download:cancel'),
-  getActiveDownload: () => ipcRenderer.invoke('download:get-active'),
+  addToQueue: (options) => ipcRenderer.invoke('queue:add', options),
+  cancelQueueItem: (id) => ipcRenderer.invoke('queue:cancel', id),
+  removeQueueItem: (id) => ipcRenderer.invoke('queue:remove', id),
+  getQueueState: () => ipcRenderer.invoke('queue:get-state'),
 
-  onDownloadProgress: (callback) => subscribe('download:progress', callback),
-  onDownloadStatus: (callback) => subscribe('download:status', callback),
-  onDownloadComplete: (callback) => subscribe('download:complete', callback),
-  onDownloadError: (callback) => subscribe('download:error', callback),
+  onQueueItemUpdated: (callback) => subscribe('queue:item-updated', callback),
+  onQueueItemComplete: (callback) => subscribe('queue:item-complete', callback),
 
   getAppVersion: () => ipcRenderer.invoke('app:get-version')
 });
