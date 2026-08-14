@@ -1,8 +1,10 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useQueueStore } from '../stores/queue';
 import QueueItemRow from './QueueItemRow.vue';
 
+const { t } = useI18n();
 const store = useQueueStore();
 
 const items = computed(() => [...store.queue].sort((a, b) => b.createdAt - a.createdAt));
@@ -11,8 +13,8 @@ const items = computed(() => [...store.queue].sort((a, b) => b.createdAt - a.cre
 <template>
   <div class="queue-list">
     <div v-if="items.length === 0" class="empty-state">
-      <p>No downloads yet.</p>
-      <p class="empty-hint">Paste a URL and click "Add to Queue" to get started.</p>
+      <p>{{ t('queue.empty.title') }}</p>
+      <p class="empty-hint">{{ t('queue.empty.hint') }}</p>
     </div>
     <QueueItemRow
       v-for="item in items"

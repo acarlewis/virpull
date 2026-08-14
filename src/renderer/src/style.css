@@ -47,6 +47,90 @@
   --shadow: 0 1px 2px rgba(20, 22, 40, 0.04), 0 8px 24px rgba(20, 22, 40, 0.06);
 }
 
+:root[data-theme='midnight'] {
+  color-scheme: dark;
+  --bg: #0b0f1a;
+  --surface: #131a2b;
+  --border: #232c42;
+  --text: #e7ebf5;
+  --text-muted: #8992ab;
+  --primary: #5b7cfa;
+  --primary-hover: #7089ff;
+  --primary-contrast: #ffffff;
+  --danger: #ff6b6b;
+  --danger-bg: #2a1620;
+  --danger-border: #47212f;
+  --success: #4fd1a5;
+  --success-bg: #10281f;
+  --success-border: #1c3d2f;
+  --track: #1c2438;
+  --scrollbar-thumb: #2c3650;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme='cyberpunk'] {
+  color-scheme: dark;
+  --bg: #0a0612;
+  --surface: #150c24;
+  --border: #2c1a44;
+  --text: #f2e9ff;
+  --text-muted: #9c86c4;
+  --primary: #ff2ea6;
+  --primary-hover: #ff56b8;
+  --primary-contrast: #ffffff;
+  --danger: #ff3860;
+  --danger-bg: #2b0a17;
+  --danger-border: #4a1228;
+  --success: #00e5c7;
+  --success-bg: #06231f;
+  --success-border: #0d3a33;
+  --track: #211334;
+  --scrollbar-thumb: #3a2354;
+  --shadow: 0 1px 2px rgba(255, 46, 166, 0.08), 0 8px 24px rgba(0, 229, 199, 0.08);
+}
+
+:root[data-theme='ocean'] {
+  color-scheme: light;
+  --bg: #eaf6f6;
+  --surface: #ffffff;
+  --border: #cfe8e8;
+  --text: #123b3e;
+  --text-muted: #4f7b7e;
+  --primary: #0a9396;
+  --primary-hover: #087f82;
+  --primary-contrast: #ffffff;
+  --danger: #e0483f;
+  --danger-bg: #fdecec;
+  --danger-border: #f6c9c6;
+  --success: #2a9d8f;
+  --success-bg: #e6f7f3;
+  --success-border: #bfe8dd;
+  --track: #dcefee;
+  --scrollbar-thumb: #b7d9d8;
+  --shadow: 0 1px 2px rgba(10, 60, 62, 0.05), 0 8px 24px rgba(10, 60, 62, 0.08);
+}
+
+:root[data-theme='forest'] {
+  color-scheme: light;
+  --bg: #f3f6ee;
+  --surface: #ffffff;
+  --border: #dde6cf;
+  --text: #263422;
+  --text-muted: #5f7355;
+  --primary: #4c7a3f;
+  --primary-hover: #3e6532;
+  --primary-contrast: #ffffff;
+  --danger: #c1483a;
+  --danger-bg: #fbeae7;
+  --danger-border: #edc7bf;
+  --success: #4c9a5b;
+  --success-bg: #e9f5ea;
+  --success-border: #c7e6cb;
+  --track: #e4ead9;
+  --scrollbar-thumb: #c3d0b3;
+  --shadow: 0 1px 2px rgba(38, 52, 34, 0.05), 0 8px 24px rgba(38, 52, 34, 0.08);
+}
+
 * {
   box-sizing: border-box;
 }

@@ -10,9 +10,11 @@ Built with Electron, Vue 3, Pinia, and Vite. yt-dlp and FFmpeg do the actual dow
 - **Download queue** — add multiple videos, they process one at a time; cancel or remove any item; open the containing folder when done
 - Live per-item progress: percent, speed, ETA, status
 - Native folder picker, with the last-used folder remembered across launches
-- Dark/light theme, synced to native dialogs too
-- Settings sidebar: default folder, preferred quality/format, auto-open-folder toggle, yt-dlp/FFmpeg version display, one-click yt-dlp update
-- Human-readable errors (expired link, unsupported URL, network failure, disk space, etc.) instead of raw stack traces
+- Customizable output filename — plain title, with upload date, or grouped into a per-uploader subfolder
+- Six themes (Light, Dark, Midnight, Cyberpunk, Ocean, Forest), synced to native dialogs too — dark by default
+- English, French, and Dutch UI, switchable anytime
+- Settings sidebar with **General** (folder/quality/format/filename/language), **Appearance** (theme picker), and **Info** (versions, update checks, disclaimer) sections
+- Human-readable, translated errors (expired link, unsupported URL, network failure, disk space, etc.) instead of raw stack traces
 
 ## Installation
 
@@ -78,12 +80,28 @@ Whatever is in `resources/binaries/` at build time gets copied next to the packa
 1. Paste a URL, choose where to save it, pick quality/format.
 2. Click **Add to Queue**. Repeat for as many videos as you like — they queue up and download one at a time.
 3. Watch progress in the **Queue** tab of the sidebar. Cancel a queued or in-progress item, remove a finished/errored one, or open its folder.
-4. Switch to the **Settings** tab to change defaults, check yt-dlp/FFmpeg versions, or update yt-dlp.
-5. Toggle dark/light theme with the icon button in the header (dark is the default).
+4. Switch to the **Settings** tab — **General** for folder/quality/format/filename/language, **Appearance** for the theme picker, **Info** for versions, update checks, and support links.
+5. Click the palette icon in the header to jump straight to the theme picker (dark is the default).
+
+## Settings reference
+
+**General**
+
+- Default download folder, preferred quality/format, auto-open-folder toggle
+- **Output filename** — one of three yt-dlp templates: `title.ext` (default), `date - title.ext`, or `uploader/title.ext` (groups downloads into a subfolder per channel/uploader)
+- **Language** — English, French, or Dutch; switches the whole UI immediately, no restart
+
+**Appearance**
+
+Six themes: Light, Dark, Midnight, Cyberpunk, Ocean, Forest. Dark is the default. Each maps to a native light/dark equivalent so OS dialogs (like the folder picker) stay visually consistent.
+
+**Info**
+
+App version, yt-dlp/FFmpeg versions with a one-click yt-dlp updater, a "Check for updates" button (queries this repo's GitHub Releases API and links to the release if a newer version exists), a support link, and a usage disclaimer.
 
 ## Configuration
 
-Settings persist to `%APPDATA%/VirPull/settings.json`: default download folder, preferred quality/format, auto-open-folder toggle, and theme. The queue itself is **not** persisted — it's in-memory only and resets on app restart (though it survives a renderer-only reload, e.g. dev-time hot-reload).
+Settings persist to `%APPDATA%/VirPull/settings.json`: default download folder, preferred quality/format, filename template, language, auto-open-folder toggle, and theme. The queue itself is **not** persisted — it's in-memory only and resets on app restart (though it survives a renderer-only reload, e.g. dev-time hot-reload).
 
 ## Architecture
 
@@ -106,10 +124,13 @@ src/
     src/
       App.vue             Two-column layout: add-download form + sidebar
       main.js
-      stores/queue.js      Pinia store; owns queue/settings/theme state
+      i18n.js              vue-i18n setup + translateMessage/translateIpcError helpers
+      locales/              en.json, fr.json
+      stores/queue.js      Pinia store; owns queue/settings/theme/language state
       components/          UrlInput, FolderPicker, QualitySelect, FormatSelect,
                             QueueList, QueueItemRow, ErrorBanner, SettingsPanel
-      utils/format.js      Byte/speed/ETA formatting + status-label helpers
+        settings/            GeneralSettings, AppearanceSettings, InfoSettings
+      utils/format.js      Byte/speed/ETA formatting + status helpers
 
 resources/binaries/     yt-dlp.exe + ffmpeg.exe (not committed — see above)
 build/icon.ico          Windows app/installer icon (generated from the logo)
@@ -139,7 +160,15 @@ The renderer's *only* write path for queue item state is these events — the `q
 
 ### Theme
 
-Dark is the default (first-run setting, and the base CSS so there's no flash-of-light on startup). The icon button in the header toggles light/dark; the choice persists to settings and is applied both to the Vue UI (via a `data-theme` attribute + CSS custom properties in `style.css`) and to Electron's `nativeTheme.themeSource`, so native elements like the folder-picker dialog match too.
+Six themes live as CSS custom-property sets in `style.css`, each under a `:root[data-theme='name']` selector. Dark is the default and defined on the bare `:root` (not behind an attribute) so the very first paint — before Vue mounts and applies the persisted theme — is already correct and never flashes light. Each theme also maps to a native light/dark equivalent (`THEME_NATIVE_SOURCE` in `src/main/settings.js`) applied to Electron's `nativeTheme.themeSource`, so native dialogs (the folder picker) stay visually consistent even for themes like Cyberpunk that have no native counterpart.
+
+### Internationalization
+
+English, French, and Dutch, via `vue-i18n`. The renderer's translations live in `src/renderer/src/locales/*.json` (`en.json`, `fr.json`, `nl.json`) and are used directly with `t('some.key')`. Adding another language means: a new locale JSON mirroring `en.json`'s keys, registering it in `i18n.js`'s `messages` object, adding it to `VALID_LANGUAGES` in `src/main/settings.js`, and adding an `<option>` to the language `<select>` in `GeneralSettings.vue`.
+
+Main-process error messages work differently: `downloader.js`'s `ValidationError`s and `classifyError()` return **i18n keys** (e.g. `'errors.expiredLink'`), not English text — the main process has no notion of the user's language. The renderer translates them via `translateMessage()`/`translateIpcError()` in `i18n.js`, which check whether the string is a known key (`te(key)`) and fall back to displaying it verbatim if not — this is what lets yt-dlp's own raw (English) stderr output still show up as a last resort without crashing on an unknown key.
+
+**CSP note:** the renderer's Content-Security-Policy includes `'unsafe-eval'`, which vue-i18n needs to JIT-compile locale message strings into render functions at runtime (`new Function()`). This only ever runs against the bundled locale JSON — never remote or user-supplied content — see the comment in `index.html`. An attempted fix using `@intlify/unplugin-vue-i18n` to precompile messages at build time (avoiding eval entirely) hit a message-compiler version mismatch between that plugin and the installed `vue-i18n`; reintroducing it would be the more airtight long-term fix if someone wants to revisit it.
 
 ## Troubleshooting
 
@@ -150,10 +179,11 @@ Dark is the default (first-run setting, and the base CSS so there's no flash-of-
 - **A download seems to "instantly" finish on retry** — yt-dlp resumes partially-downloaded fragments by default. This is expected; delete any `*.part`/`*.ytdl` files in the destination folder to force a clean re-download.
 - **Cancel doesn't seem to stop things** — on Windows, yt-dlp spawns ffmpeg as a subprocess; cancellation uses `taskkill /pid <pid> /T /F` to kill the whole tree rather than a plain process `kill()`, which would leave ffmpeg running. If you still see orphaned processes, check Task Manager for stray `yt-dlp.exe`/`ffmpeg.exe`.
 - **A queue item appears twice right after adding it** — don't reintroduce a second write path for queue state. `queue:add`'s IPC return value must only be used for its promise (success/failure of adding), never to push into the renderer's `queue` array — that array is populated exclusively by `queue:item-updated` events, which `QueueManager.add()` emits synchronously before returning.
+- **Blank window with a CSP "unsafe-eval" console error mentioning vue-i18n** — the CSP in `index.html` must keep `'unsafe-eval'` in `script-src` (see the Internationalization section above) unless message precompilation is set up correctly; removing it without that will blank-screen the app.
 - **Squirrel installer build fails** — `npm run make` needs to run on Windows (Squirrel.Windows is Windows-only); make sure `npm run package` succeeds first to isolate whether the issue is in the Vite build or the installer step.
 
 ## Roadmap
 
-Implemented: queueing, per-item progress/cancel/remove, settings sidebar, dark/light theme, yt-dlp self-update.
+Implemented: queueing, per-item progress/cancel/remove, General/Appearance/Info settings, six themes, English/French/Dutch UI, customizable filename templates, yt-dlp self-update, and update checks against GitHub Releases.
 
-Not implemented yet: persisting the queue across app restarts, concurrent (parallel) downloads, and app auto-update.
+Not implemented yet: persisting the queue across app restarts, concurrent (parallel) downloads, in-app auto-update (the "Check for updates" button links out to the release rather than downloading it), and languages beyond English/French/Dutch.

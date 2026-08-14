@@ -2,9 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      'unsafe-eval' is required by vue-i18n, which JIT-compiles locale
+      message strings into render functions via `new Function()` at
+      runtime. This only ever runs against our own bundled locale JSON
+      (src/renderer/src/locales/*.json) — never remote or user-supplied
+      content — so it doesn't extend to arbitrary script injection risk.
+      All other content stays restricted to 'self'.
+    -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VirPull</title>

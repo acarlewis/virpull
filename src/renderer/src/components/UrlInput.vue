@@ -1,4 +1,7 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 const model = defineModel({ type: String, default: '' });
 defineProps({ disabled: { type: Boolean, default: false } });
 
@@ -14,20 +17,20 @@ async function pasteFromClipboard() {
 
 <template>
   <div class="field">
-    <label class="field-label" for="url-input">URL</label>
+    <label class="field-label" for="url-input">{{ t('form.url.label') }}</label>
     <div class="row">
       <input
         id="url-input"
         v-model="model"
         type="text"
         class="text-input"
-        placeholder="Paste video or M3U8 URL"
+        :placeholder="t('form.url.placeholder')"
         :disabled="disabled"
         autocomplete="off"
         spellcheck="false"
       />
       <button type="button" class="btn-secondary" :disabled="disabled" @click="pasteFromClipboard">
-        Paste
+        {{ t('form.url.paste') }}
       </button>
     </div>
   </div>

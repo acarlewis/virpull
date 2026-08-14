@@ -1,21 +1,25 @@
 <script setup>
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 const model = defineModel({ type: String, default: 'best' });
 defineProps({ disabled: { type: Boolean, default: false } });
 
-const options = [
-  { value: 'best', label: 'Best available' },
-  { value: '2160', label: '2160p (4K)' },
-  { value: '1440', label: '1440p (2K)' },
-  { value: '1080', label: '1080p' },
-  { value: '720', label: '720p' },
-  { value: '480', label: '480p' },
-  { value: '360', label: '360p' }
-];
+const options = computed(() => [
+  { value: 'best', label: t('form.quality.best') },
+  { value: '2160', label: t('form.quality.p2160') },
+  { value: '1440', label: t('form.quality.p1440') },
+  { value: '1080', label: t('form.quality.p1080') },
+  { value: '720', label: t('form.quality.p720') },
+  { value: '480', label: t('form.quality.p480') },
+  { value: '360', label: t('form.quality.p360') }
+]);
 </script>
 
 <template>
   <div class="field">
-    <label class="field-label" for="quality-select">Quality</label>
+    <label class="field-label" for="quality-select">{{ t('form.quality.label') }}</label>
     <select id="quality-select" v-model="model" class="select-input" :disabled="disabled">
       <option v-for="opt in options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
     </select>

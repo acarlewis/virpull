@@ -1,18 +1,22 @@
 <script setup>
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 const model = defineModel({ type: String, default: 'mp4' });
 defineProps({ disabled: { type: Boolean, default: false } });
 
-const options = [
-  { value: 'mp4', label: 'MP4' },
-  { value: 'mkv', label: 'MKV' },
-  { value: 'webm', label: 'WEBM' },
-  { value: 'mp3', label: 'MP3 (audio only)' }
-];
+const options = computed(() => [
+  { value: 'mp4', label: t('form.format.mp4') },
+  { value: 'mkv', label: t('form.format.mkv') },
+  { value: 'webm', label: t('form.format.webm') },
+  { value: 'mp3', label: t('form.format.mp3') }
+]);
 </script>
 
 <template>
   <div class="field">
-    <label class="field-label" for="format-select">Format</label>
+    <label class="field-label" for="format-select">{{ t('form.format.label') }}</label>
     <select id="format-select" v-model="model" class="select-input" :disabled="disabled">
       <option v-for="opt in options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
     </select>

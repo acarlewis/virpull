@@ -2,6 +2,7 @@ import { spawn, exec } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { FILENAME_TEMPLATES } from './settings.js';
 
 // Unique markers so we can pick our structured progress/print lines out of
 // yt-dlp's normal chatter on stdout without ambiguity.
@@ -24,47 +25,54 @@ const AUDIO_FORMATS = new Set(['mp3']);
 
 export class ValidationError extends Error {}
 
+// Messages are i18n keys (see src/renderer/src/locales/*.json under "errors")
+// rather than final English text — the renderer translates them via
+// `te(key) ? t(key) : key`, keeping the main process language-agnostic.
 export function validateUrl(rawUrl) {
   if (typeof rawUrl !== 'string') {
-    throw new ValidationError('Please enter a video URL.');
+    throw new ValidationError('errors.urlRequired');
   }
   const url = rawUrl.trim();
   if (!url) {
-    throw new ValidationError('Please enter a video URL.');
+    throw new ValidationError('errors.urlRequired');
   }
   // yt-dlp treats any argument starting with "-" as an option, which would
   // let a crafted "URL" inject extra command-line flags. Reject outright.
   if (url.startsWith('-')) {
-    throw new ValidationError('That does not look like a valid URL.');
+    throw new ValidationError('errors.urlInvalid');
   }
   let parsed;
   try {
     parsed = new URL(url);
   } catch {
-    throw new ValidationError('That does not look like a valid URL.');
+    throw new ValidationError('errors.urlInvalid');
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw new ValidationError('Only http:// and https:// URLs are supported.');
+    throw new ValidationError('errors.urlProtocol');
   }
   return url;
 }
 
 export function validateOutputDir(dir) {
   if (typeof dir !== 'string' || !dir.trim()) {
-    throw new ValidationError('Please choose a download location.');
+    throw new ValidationError('errors.folderRequired');
   }
   if (!path.isAbsolute(dir)) {
-    throw new ValidationError('The download location must be an absolute path.');
+    throw new ValidationError('errors.folderNotAbsolute');
   }
   try {
     fs.mkdirSync(dir, { recursive: true });
   } catch (err) {
     if (err.code === 'EACCES' || err.code === 'EPERM') {
-      throw new ValidationError('Permission denied for the selected download folder.');
+      throw new ValidationError('errors.folderPermission');
     }
-    throw new ValidationError('The selected download folder is not usable.');
+    throw new ValidationError('errors.folderInvalid');
   }
   return dir;
+}
+
+export function resolveFilenameTemplate(template) {
+  return Object.values(FILENAME_TEMPLATES).includes(template) ? template : FILENAME_TEMPLATES.default;
 }
 
 function buildFormatArgs(quality, format) {
@@ -86,8 +94,8 @@ function buildFormatArgs(quality, format) {
   return args;
 }
 
-export function buildArgs({ url, outputDir, quality, format, ffmpegPath }) {
-  const outputTemplate = path.join(outputDir, '%(title)s.%(ext)s');
+export function buildArgs({ url, outputDir, quality, format, ffmpegPath, filenameTemplate }) {
+  const outputTemplate = path.join(outputDir, resolveFilenameTemplate(filenameTemplate));
   return [
     url,
     '--newline',
@@ -109,27 +117,30 @@ export function buildArgs({ url, outputDir, quality, format, ffmpegPath }) {
 function classifyError(stderrText, exitCode) {
   const text = stderrText || '';
   const patterns = [
-    [/no space left on device|enospc/i, 'Not enough disk space to complete the download.'],
-    [/permission denied|eacces|eperm/i, 'Permission denied. Choose a different download folder and try again.'],
-    [/sign in to confirm|age[- ]restricted/i, 'This video requires sign-in or is age-restricted and cannot be downloaded.'],
-    [/video unavailable|this video is not available|has been removed/i, 'This video is unavailable. It may have been removed or made private.'],
-    [/http error 403|forbidden/i, 'Download link has expired. Please obtain a fresh video URL and try again.'],
-    [/http error 404/i, 'The video could not be found at that URL.'],
-    [/unsupported url/i, 'This URL is not supported.'],
-    [/unable to download webpage|getaddrinfo|enotfound|econnrefused|econnreset|network is unreachable|timed out/i, 'Network error. Check your internet connection and try again.'],
-    [/ffmpeg not found|ffprobe not found/i, 'FFmpeg is missing. Please reinstall the application.'],
-    [/ffmpeg\.exe.*not found|yt-dlp\.exe.*not found/i, 'A required component is missing. Please reinstall the application.'],
-    [/could not write to output file|no such file or directory/i, 'Could not write the downloaded file. Check the download folder and try again.']
+    [/no space left on device|enospc/i, 'errors.noSpace'],
+    [/permission denied|eacces|eperm/i, 'errors.permissionDenied'],
+    [/sign in to confirm|age[- ]restricted/i, 'errors.ageRestricted'],
+    [/video unavailable|this video is not available|has been removed/i, 'errors.videoUnavailable'],
+    [/http error 403|forbidden/i, 'errors.expiredLink'],
+    [/http error 404/i, 'errors.notFound'],
+    [/unsupported url/i, 'errors.unsupportedUrl'],
+    [/unable to download webpage|getaddrinfo|enotfound|econnrefused|econnreset|network is unreachable|timed out/i, 'errors.network'],
+    [/ffmpeg not found|ffprobe not found/i, 'errors.ffmpegMissing'],
+    [/ffmpeg\.exe.*not found|yt-dlp\.exe.*not found/i, 'errors.componentMissing'],
+    [/could not write to output file|no such file or directory/i, 'errors.writeFailed']
   ];
-  for (const [regex, message] of patterns) {
-    if (regex.test(text)) return message;
+  for (const [regex, key] of patterns) {
+    if (regex.test(text)) return key;
   }
+  // Last resort: yt-dlp's own (English) error line, or a bare exit-code
+  // message. Neither matches a translation key, so the renderer shows it
+  // verbatim rather than translating it.
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const lastError = [...lines].reverse().find((l) => /^error/i.test(l));
   if (lastError) {
-    return `The download failed: ${lastError.replace(/^ERROR:\s*/i, '')}`;
+    return lastError.replace(/^ERROR:\s*/i, '');
   }
-  return `The download failed unexpectedly (exit code ${exitCode}).`;
+  return `Download failed unexpectedly (exit code ${exitCode}).`;
 }
 
 function parseNumeric(value) {
@@ -139,12 +150,13 @@ function parseNumeric(value) {
 }
 
 export class DownloadJob {
-  constructor({ url, outputDir, quality, format, ytDlpPath, ffmpegPath }) {
+  constructor({ url, outputDir, quality, format, filenameTemplate, ytDlpPath, ffmpegPath }) {
     this.id = crypto.randomUUID();
     this.url = url;
     this.outputDir = outputDir;
     this.quality = quality;
     this.format = format;
+    this.filenameTemplate = filenameTemplate;
     this.ytDlpPath = ytDlpPath;
     this.ffmpegPath = ffmpegPath;
     this.cancelled = false;
@@ -159,6 +171,7 @@ export class DownloadJob {
       outputDir: this.outputDir,
       quality: this.quality,
       format: this.format,
+      filenameTemplate: this.filenameTemplate,
       ffmpegPath: this.ffmpegPath
     });
 
@@ -169,7 +182,7 @@ export class DownloadJob {
         stdio: ['ignore', 'pipe', 'pipe']
       });
     } catch (err) {
-      onError('Failed to start yt-dlp. Please reinstall the application.');
+      onError('errors.startFailed');
       return;
     }
     this.child = child;
@@ -192,7 +205,7 @@ export class DownloadJob {
 
     child.on('error', (err) => {
       if (this.cancelled) return;
-      onError('Failed to start yt-dlp. Please reinstall the application.');
+      onError('errors.startFailed');
     });
 
     child.on('close', (code) => {
