@@ -18,7 +18,10 @@ module.exports = {
       name: '@electron-forge/maker-squirrel',
       config: {
         name: 'virpull',
-        setupIcon: 'build/icon.ico'
+        setupIcon: 'build/icon.ico',
+        // Space-free, predictable filename so it can be linked directly,
+        // e.g. github.com/<repo>/releases/latest/download/VirPull-Setup.exe
+        setupExe: 'VirPull-Setup.exe'
       }
     },
     {
