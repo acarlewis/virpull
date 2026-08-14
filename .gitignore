@@ -1,0 +1,11 @@
+node_modules/
+.vite/
+out/
+dist/
+*.log
+
+# Bundled binaries are downloaded per-machine, not committed.
+resources/binaries/*.exe
+
+# Local app settings written by the running app during development.
+resources/binaries/*.zip
