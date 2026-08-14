@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { DownloadJob, validateUrl, validateOutputDir } from './downloader.js';
+import { DownloadJob, validateUrl, validateOutputDir, resolveFilenameTemplate } from './downloader.js';
 
 const TERMINAL_STATUSES = new Set(['finished', 'error', 'cancelled']);
 
@@ -27,7 +27,7 @@ export class QueueManager {
     this.onEvent('queue:item-updated', { ...item });
   }
 
-  add({ url, outputDir, quality, format }) {
+  add({ url, outputDir, quality, format, filenameTemplate }) {
     // Validation errors throw synchronously and never reach the queue —
     // the caller (ipc.js) surfaces them as an immediate rejection.
     const cleanUrl = validateUrl(url);
@@ -39,6 +39,7 @@ export class QueueManager {
       outputDir: cleanOutputDir,
       quality: typeof quality === 'string' ? quality : 'best',
       format: typeof format === 'string' ? format : 'mp4',
+      filenameTemplate: resolveFilenameTemplate(filenameTemplate),
       status: 'queued',
       percent: 0,
       downloadedBytes: null,
@@ -115,7 +116,7 @@ export class QueueManager {
     const ffmpegPath = this.getFfmpegPath();
     if (!this.binaryExists(ytDlpPath) || !this.binaryExists(ffmpegPath)) {
       item.status = 'error';
-      item.errorMessage = 'yt-dlp or FFmpeg is missing. Check Settings for details.';
+      item.errorMessage = 'errors.binariesMissing';
       this._emitItemUpdate(item);
       this._processNext();
       return;
@@ -126,6 +127,7 @@ export class QueueManager {
       outputDir: item.outputDir,
       quality: item.quality,
       format: item.format,
+      filenameTemplate: item.filenameTemplate,
       ytDlpPath,
       ffmpegPath
     });

@@ -6,7 +6,7 @@
   "main": ".vite/build/main.js",
   "private": true,
   "type": "commonjs",
-  "author": "VirPull",
+  "author": "CLdForge",
   "license": "MIT",
   "scripts": {
     "postinstall": "node scripts/setup-binaries.mjs",
@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",
-    "pinia": "^2.2.6"
+    "pinia": "^2.2.6",
+    "vue-i18n": "^9.14.5"
   }
 }

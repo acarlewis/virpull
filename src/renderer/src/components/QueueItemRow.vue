@@ -1,6 +1,10 @@
 <script setup>
 import { computed } from 'vue';
-import { formatSpeed, formatEta, formatPercent, statusLabel, isActiveStatus, isIndeterminateStatus } from '../utils/format';
+import { useI18n } from 'vue-i18n';
+import { formatSpeed, formatEta, formatPercent, isActiveStatus, isIndeterminateStatus } from '../utils/format';
+import { translateMessage } from '../i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   item: { type: Object, required: true }
@@ -14,6 +18,8 @@ const indeterminate = computed(() => isIndeterminateStatus(props.item.status));
 const displayPercent = computed(() => formatPercent(props.item.percent));
 const speedText = computed(() => formatSpeed(props.item.speedBytesPerSec));
 const etaText = computed(() => formatEta(props.item.etaSeconds));
+const statusText = computed(() => t(`status.${props.item.status}`));
+const errorText = computed(() => translateMessage(props.item.errorMessage));
 
 const fileName = computed(() => {
   if (!props.item.filePath) return null;
@@ -28,8 +34,8 @@ const fileName = computed(() => {
       <div class="queue-item-title" :title="item.url">{{ fileName || item.url }}</div>
       <div class="queue-item-meta">
         <span class="badge">{{ item.format.toUpperCase() }}</span>
-        <span class="badge">{{ item.quality === 'best' ? 'Best' : item.quality + 'p' }}</span>
-        <span class="status-text" :class="item.status">{{ statusLabel(item.status) }}</span>
+        <span class="badge">{{ item.quality === 'best' ? t('form.quality.best') : item.quality + 'p' }}</span>
+        <span class="status-text" :class="item.status">{{ statusText }}</span>
       </div>
 
       <div v-if="isActive" class="mini-track" :class="{ indeterminate }">
@@ -39,11 +45,11 @@ const fileName = computed(() => {
       <div v-if="isActive && (speedText || etaText)" class="queue-item-stats">
         <span v-if="!indeterminate">{{ displayPercent }}%</span>
         <span v-if="speedText">{{ speedText }}</span>
-        <span v-if="etaText">{{ etaText }} left</span>
+        <span v-if="etaText">{{ etaText }} {{ t('queue.left') }}</span>
       </div>
 
       <div v-if="item.status === 'error' && item.errorMessage" class="queue-item-error">
-        {{ item.errorMessage }}
+        {{ errorText }}
       </div>
     </div>
 
@@ -52,7 +58,7 @@ const fileName = computed(() => {
         v-if="item.status === 'finished'"
         type="button"
         class="icon-btn"
-        title="Open folder"
+        :title="t('queue.openFolder')"
         @click="emit('open-folder')"
       >
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" /></svg>
@@ -61,7 +67,7 @@ const fileName = computed(() => {
         v-if="isActive || isQueued"
         type="button"
         class="icon-btn"
-        title="Cancel"
+        :title="t('queue.cancel')"
         @click="emit('cancel')"
       >
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
@@ -70,7 +76,7 @@ const fileName = computed(() => {
         v-if="isTerminal"
         type="button"
         class="icon-btn"
-        title="Remove"
+        :title="t('queue.remove')"
         @click="emit('remove')"
       >
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
@@ -136,7 +142,7 @@ const fileName = computed(() => {
 }
 .mini-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary), #7d95ff);
+  background: linear-gradient(90deg, var(--primary), var(--primary-hover));
   border-radius: 999px;
   transition: width 0.2s ease;
 }
@@ -145,7 +151,7 @@ const fileName = computed(() => {
   top: 0;
   bottom: 0;
   width: 40%;
-  background: linear-gradient(90deg, var(--primary), #7d95ff);
+  background: linear-gradient(90deg, var(--primary), var(--primary-hover));
   border-radius: 999px;
   animation: mini-slide 1.2s ease-in-out infinite;
 }

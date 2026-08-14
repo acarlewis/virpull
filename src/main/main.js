@@ -3,6 +3,7 @@ import { app, BrowserWindow, shell, nativeTheme } from 'electron';
 import started from 'electron-squirrel-startup';
 import { registerIpcHandlers } from './ipc.js';
 import * as settings from './settings.js';
+import { THEME_NATIVE_SOURCE } from './settings.js';
 
 // MAIN_WINDOW_VITE_DEV_SERVER_URL / MAIN_WINDOW_VITE_NAME are bare globals
 // textually injected by @electron-forge/plugin-vite's esbuild `define` at
@@ -60,7 +61,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   const { theme } = settings.load();
-  nativeTheme.themeSource = theme;
+  nativeTheme.themeSource = THEME_NATIVE_SOURCE[theme] ?? 'dark';
   createWindow();
   registerIpcHandlers(mainWindow);
 });

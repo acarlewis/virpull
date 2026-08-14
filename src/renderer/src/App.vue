@@ -1,5 +1,6 @@
 <script setup>
-import { onMounted, onUnmounted, computed } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useQueueStore } from './stores/queue';
 import UrlInput from './components/UrlInput.vue';
 import FolderPicker from './components/FolderPicker.vue';
@@ -9,6 +10,7 @@ import ErrorBanner from './components/ErrorBanner.vue';
 import SettingsPanel from './components/SettingsPanel.vue';
 import QueueList from './components/QueueList.vue';
 
+const { t } = useI18n();
 const store = useQueueStore();
 
 onMounted(() => {
@@ -18,8 +20,10 @@ onUnmounted(() => {
   store.unsubscribers.forEach((unsub) => unsub());
 });
 
-const themeLabels = { light: 'Light', dark: 'Dark' };
-const themeTitle = computed(() => `Theme: ${themeLabels[store.theme]} (click to switch)`);
+function openAppearance() {
+  store.setSidebarView('settings');
+  store.setSettingsSection('appearance');
+}
 </script>
 
 <template>
@@ -30,38 +34,16 @@ const themeTitle = computed(() => `Theme: ${themeLabels[store.theme]} (click to 
       <button
         type="button"
         class="theme-toggle"
-        :title="themeTitle"
-        :aria-label="themeTitle"
-        @click="store.cycleTheme"
+        :title="t('settings.appearance.heading')"
+        :aria-label="t('settings.appearance.heading')"
+        @click="openAppearance"
       >
-        <svg
-          v-if="store.theme === 'dark'"
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
-        </svg>
-        <svg
-          v-else
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="12" cy="12" r="4" />
-          <path
-            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-          />
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="13.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+          <circle cx="17.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
+          <circle cx="8.5" cy="7.5" r="1" fill="currentColor" stroke="none" />
+          <circle cx="6.5" cy="12.5" r="1" fill="currentColor" stroke="none" />
+          <path d="M12 2a10 10 0 1 0 0 20 2.5 2.5 0 0 0 1.9-4.1 1.6 1.6 0 0 1 1.2-2.6H17a5 5 0 0 0 5-5c0-4.4-4.5-8.3-10-8.3Z" />
         </svg>
       </button>
     </header>
@@ -69,11 +51,11 @@ const themeTitle = computed(() => `Theme: ${themeLabels[store.theme]} (click to 
     <div class="app-body">
       <main class="app-main">
         <div v-if="!store.binariesReady && store.ready" class="binaries-warning">
-          <strong>Missing components:</strong>
+          <strong>{{ t('binariesWarning.prefix') }}</strong>
           <span v-if="!store.binaries.ytDlp.available">yt-dlp.exe</span>
           <span v-if="!store.binaries.ytDlp.available && !store.binaries.ffmpeg.available">, </span>
           <span v-if="!store.binaries.ffmpeg.available">ffmpeg.exe</span>
-          not found. See Settings for details.
+          {{ t('binariesWarning.suffix') }}
         </div>
 
         <UrlInput v-model="store.url" />
@@ -86,7 +68,7 @@ const themeTitle = computed(() => `Theme: ${themeLabels[store.theme]} (click to 
         </div>
 
         <div class="actions">
-          <button type="button" class="btn-primary" @click="store.addToQueue">Add to Queue</button>
+          <button type="button" class="btn-primary" @click="store.addToQueue">{{ t('form.addToQueue') }}</button>
         </div>
 
         <ErrorBanner :message="store.formError" @dismiss="store.formError = ''" />
@@ -100,7 +82,7 @@ const themeTitle = computed(() => `Theme: ${themeLabels[store.theme]} (click to 
             :class="{ active: store.sidebarView === 'queue' }"
             @click="store.setSidebarView('queue')"
           >
-            Queue
+            {{ t('queue.tabLabel') }}
             <span v-if="store.activeCount" class="tab-badge">{{ store.activeCount }}</span>
           </button>
           <button
@@ -109,7 +91,7 @@ const themeTitle = computed(() => `Theme: ${themeLabels[store.theme]} (click to 
             :class="{ active: store.sidebarView === 'settings' }"
             @click="store.setSidebarView('settings')"
           >
-            Settings
+            {{ t('settings.tabLabel') }}
           </button>
         </div>
         <div class="sidebar-content">

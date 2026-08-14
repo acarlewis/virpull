@@ -1,4 +1,7 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 const model = defineModel({ type: String, default: '' });
 defineProps({ disabled: { type: Boolean, default: false } });
 const emit = defineEmits(['browse']);
@@ -6,7 +9,7 @@ const emit = defineEmits(['browse']);
 
 <template>
   <div class="field">
-    <label class="field-label" for="folder-input">Save to</label>
+    <label class="field-label" for="folder-input">{{ t('form.folder.label') }}</label>
     <div class="row">
       <input
         id="folder-input"
@@ -15,10 +18,10 @@ const emit = defineEmits(['browse']);
         class="text-input"
         readonly
         :disabled="disabled"
-        placeholder="Choose a download folder"
+        :placeholder="t('form.folder.placeholder')"
       />
       <button type="button" class="btn-secondary" :disabled="disabled" @click="emit('browse')">
-        Browse
+        {{ t('form.folder.browse') }}
       </button>
     </div>
   </div>

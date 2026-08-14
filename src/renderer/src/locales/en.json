@@ -1,0 +1,118 @@
+{
+  "form": {
+    "url": { "label": "URL", "placeholder": "Paste video or M3U8 URL", "paste": "Paste" },
+    "folder": { "label": "Save to", "placeholder": "Choose a download folder", "browse": "Browse" },
+    "quality": {
+      "label": "Quality",
+      "best": "Best available",
+      "p2160": "2160p (4K)",
+      "p1440": "1440p (2K)",
+      "p1080": "1080p",
+      "p720": "720p",
+      "p480": "480p",
+      "p360": "360p"
+    },
+    "format": { "label": "Format", "mp4": "MP4", "mkv": "MKV", "webm": "WEBM", "mp3": "MP3 (audio only)" },
+    "addToQueue": "Add to Queue"
+  },
+  "binariesWarning": {
+    "prefix": "Missing components:",
+    "suffix": "not found. See Settings for details."
+  },
+  "queue": {
+    "tabLabel": "Queue",
+    "empty": {
+      "title": "No downloads yet.",
+      "hint": "Paste a URL and click \"Add to Queue\" to get started."
+    },
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "openFolder": "Open folder",
+    "left": "left"
+  },
+  "status": {
+    "queued": "Queued",
+    "starting": "Starting…",
+    "fetching-info": "Fetching info…",
+    "downloading": "Downloading…",
+    "merging": "Merging…",
+    "extracting-audio": "Extracting audio…",
+    "processing": "Finalizing…",
+    "already-downloaded": "Already downloaded",
+    "finished": "Complete",
+    "error": "Error",
+    "cancelled": "Cancelled"
+  },
+  "settings": {
+    "tabLabel": "Settings",
+    "nav": { "general": "General", "appearance": "Appearance", "info": "Info" },
+    "general": {
+      "downloadFolder": "Default download folder",
+      "change": "Change",
+      "quality": "Preferred quality",
+      "format": "Preferred format",
+      "autoOpen": "Auto-open folder after download",
+      "language": "Language",
+      "filenameTemplate": "Output filename",
+      "filenameTemplateOptions": {
+        "default": "Default — title.ext",
+        "date": "With date — date - title.ext",
+        "uploader": "With uploader — uploader/title.ext"
+      }
+    },
+    "appearance": {
+      "heading": "Theme",
+      "themes": {
+        "light": "Light",
+        "dark": "Dark",
+        "midnight": "Midnight",
+        "cyberpunk": "Cyberpunk",
+        "ocean": "Ocean",
+        "forest": "Forest"
+      }
+    },
+    "info": {
+      "version": "App version",
+      "ytDlpVersion": "yt-dlp version",
+      "ffmpegVersion": "FFmpeg version",
+      "notFound": "Not found",
+      "updateYtDlp": "Update yt-dlp",
+      "updating": "Updating…",
+      "updateSuccess": "Updated successfully.",
+      "checkForUpdate": "Check for updates",
+      "checking": "Checking…",
+      "upToDate": "You're on the latest version.",
+      "updateAvailable": "A new version ({version}) is available.",
+      "viewRelease": "View release",
+      "support": "Support VirPull",
+      "disclaimerHeading": "Disclaimer",
+      "disclaimer": "This application is intended to be used at your own risk. The developer is not responsible for any damages, troubles, or legal liabilities arising from the use of this software. Please comply with copyright laws and use within the scope of personal use."
+    }
+  },
+  "errors": {
+    "urlRequired": "Please enter a video URL.",
+    "urlInvalid": "That does not look like a valid URL.",
+    "urlProtocol": "Only http:// and https:// URLs are supported.",
+    "folderRequired": "Please choose a download location.",
+    "folderNotAbsolute": "The download location must be an absolute path.",
+    "folderPermission": "Permission denied for the selected download folder.",
+    "folderInvalid": "The selected download folder is not usable.",
+    "binariesMissing": "yt-dlp or FFmpeg is missing. Check Settings for details.",
+    "ytDlpMissing": "yt-dlp.exe was not found. Please reinstall the application.",
+    "ffmpegMissing": "FFmpeg was not found. Please reinstall the application.",
+    "componentMissing": "A required component is missing. Please reinstall the application.",
+    "startFailed": "Failed to start yt-dlp. Please reinstall the application.",
+    "noSpace": "Not enough disk space to complete the download.",
+    "permissionDenied": "Permission denied. Choose a different download folder and try again.",
+    "ageRestricted": "This video requires sign-in or is age-restricted and cannot be downloaded.",
+    "videoUnavailable": "This video is unavailable. It may have been removed or made private.",
+    "expiredLink": "Download link has expired. Please obtain a fresh video URL and try again.",
+    "notFound": "The video could not be found at that URL.",
+    "unsupportedUrl": "This URL is not supported.",
+    "network": "Network error. Check your internet connection and try again.",
+    "writeFailed": "Could not write the downloaded file. Check the download folder and try again.",
+    "invalidRequest": "Invalid download request.",
+    "addFailed": "Failed to add the download.",
+    "ytDlpUpdateFailed": "Could not update yt-dlp. Check your internet connection and try again."
+  }
+}

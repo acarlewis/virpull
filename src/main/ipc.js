@@ -4,6 +4,9 @@ import { ValidationError } from './downloader.js';
 import { QueueManager } from './queue.js';
 import { getYtDlpPath, getFfmpegPath, binaryExists, getDefaultDownloadsDir } from './paths.js';
 import * as settings from './settings.js';
+import { VALID_THEMES, VALID_LANGUAGES, FILENAME_TEMPLATES, THEME_NATIVE_SOURCE } from './settings.js';
+
+const REPO = 'acarlewis/virpull';
 
 function getVersion(binaryPath, args = ['--version']) {
   return new Promise((resolve) => {
@@ -19,6 +22,18 @@ function getVersion(binaryPath, args = ['--version']) {
       resolve(stdout.trim().split(/\r?\n/)[0] || null);
     });
   });
+}
+
+function isNewerVersion(latest, current) {
+  const toParts = (v) => v.split('.').map((p) => parseInt(p, 10) || 0);
+  const a = toParts(latest);
+  const b = toParts(current);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const x = a[i] || 0;
+    const y = b[i] || 0;
+    if (x !== y) return x > y;
+  }
+  return false;
 }
 
 function sendToRenderer(win, channel, payload) {
@@ -38,15 +53,22 @@ export function registerIpcHandlers(mainWindow) {
   ipcMain.handle('settings:get', () => settings.load());
 
   ipcMain.handle('settings:update', (_event, partial) => {
-    const allowedKeys = ['downloadDir', 'quality', 'format', 'autoOpenFolder', 'theme'];
+    const allowedKeys = ['downloadDir', 'quality', 'format', 'autoOpenFolder', 'theme', 'language', 'filenameTemplate'];
     const sanitized = {};
     for (const key of allowedKeys) {
       if (Object.prototype.hasOwnProperty.call(partial ?? {}, key)) {
         sanitized[key] = partial[key];
       }
     }
-    if (['light', 'dark'].includes(sanitized.theme)) {
-      nativeTheme.themeSource = sanitized.theme;
+    if (sanitized.theme !== undefined) {
+      if (!VALID_THEMES.includes(sanitized.theme)) delete sanitized.theme;
+      else nativeTheme.themeSource = THEME_NATIVE_SOURCE[sanitized.theme];
+    }
+    if (sanitized.language !== undefined && !VALID_LANGUAGES.includes(sanitized.language)) {
+      delete sanitized.language;
+    }
+    if (sanitized.filenameTemplate !== undefined && !Object.values(FILENAME_TEMPLATES).includes(sanitized.filenameTemplate)) {
+      delete sanitized.filenameTemplate;
     }
     return settings.save(sanitized);
   });
@@ -92,13 +114,19 @@ export function registerIpcHandlers(mainWindow) {
         url: payload?.url,
         outputDir: payload?.outputDir,
         quality: payload?.quality,
-        format: payload?.format
+        format: payload?.format,
+        filenameTemplate: payload?.filenameTemplate
       });
-      settings.save({ downloadDir: item.outputDir, quality: item.quality, format: item.format });
+      settings.save({
+        downloadDir: item.outputDir,
+        quality: item.quality,
+        format: item.format,
+        filenameTemplate: item.filenameTemplate
+      });
       return item;
     } catch (err) {
       if (err instanceof ValidationError) throw err;
-      throw new Error('Invalid download request.');
+      throw new Error('errors.invalidRequest');
     }
   });
 
@@ -109,12 +137,12 @@ export function registerIpcHandlers(mainWindow) {
   ipcMain.handle('binaries:update-ytdlp', async () => {
     const ytDlpPath = getYtDlpPath();
     if (!binaryExists(ytDlpPath)) {
-      throw new Error('yt-dlp.exe was not found. Please reinstall the application.');
+      throw new Error('errors.ytDlpMissing');
     }
     await new Promise((resolve, reject) => {
       execFile(ytDlpPath, ['-U'], { windowsHide: true, timeout: 60000 }, (err, stdout, stderr) => {
         if (err) {
-          reject(new Error('Could not update yt-dlp. Check your internet connection and try again.'));
+          reject(new Error('errors.ytDlpUpdateFailed'));
           return;
         }
         resolve(stdout || stderr);
@@ -125,4 +153,30 @@ export function registerIpcHandlers(mainWindow) {
   });
 
   ipcMain.handle('app:get-version', () => app.getVersion());
+
+  ipcMain.handle('app:check-for-update', async () => {
+    const currentVersion = app.getVersion();
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
+        headers: { Accept: 'application/vnd.github+json' }
+      });
+      if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
+      const data = await res.json();
+      const latestVersion = (data.tag_name || '').replace(/^v/i, '');
+      return {
+        currentVersion,
+        latestVersion: latestVersion || null,
+        hasUpdate: Boolean(latestVersion) && isNewerVersion(latestVersion, currentVersion),
+        url: data.html_url || `https://github.com/${REPO}/releases/latest`
+      };
+    } catch {
+      throw new Error('errors.network');
+    }
+  });
+
+  ipcMain.handle('app:open-external', (_event, url) => {
+    if (typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))) {
+      shell.openExternal(url);
+    }
+  });
 }

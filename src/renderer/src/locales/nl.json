@@ -1,0 +1,118 @@
+{
+  "form": {
+    "url": { "label": "URL", "placeholder": "Plak video- of M3U8-URL", "paste": "Plakken" },
+    "folder": { "label": "Opslaan in", "placeholder": "Kies een downloadmap", "browse": "Bladeren" },
+    "quality": {
+      "label": "Kwaliteit",
+      "best": "Beste beschikbare kwaliteit",
+      "p2160": "2160p (4K)",
+      "p1440": "1440p (2K)",
+      "p1080": "1080p",
+      "p720": "720p",
+      "p480": "480p",
+      "p360": "360p"
+    },
+    "format": { "label": "Formaat", "mp4": "MP4", "mkv": "MKV", "webm": "WEBM", "mp3": "MP3 (alleen audio)" },
+    "addToQueue": "Toevoegen aan wachtrij"
+  },
+  "binariesWarning": {
+    "prefix": "Ontbrekende onderdelen:",
+    "suffix": "niet gevonden. Zie Instellingen voor meer details."
+  },
+  "queue": {
+    "tabLabel": "Wachtrij",
+    "empty": {
+      "title": "Nog geen downloads.",
+      "hint": "Plak een URL en klik op \"Toevoegen aan wachtrij\" om te beginnen."
+    },
+    "cancel": "Annuleren",
+    "remove": "Verwijderen",
+    "openFolder": "Map openen",
+    "left": "resterend"
+  },
+  "status": {
+    "queued": "In wachtrij",
+    "starting": "Starten…",
+    "fetching-info": "Informatie ophalen…",
+    "downloading": "Downloaden…",
+    "merging": "Samenvoegen…",
+    "extracting-audio": "Audio extraheren…",
+    "processing": "Afronden…",
+    "already-downloaded": "Al gedownload",
+    "finished": "Voltooid",
+    "error": "Fout",
+    "cancelled": "Geannuleerd"
+  },
+  "settings": {
+    "tabLabel": "Instellingen",
+    "nav": { "general": "Algemeen", "appearance": "Weergave", "info": "Info" },
+    "general": {
+      "downloadFolder": "Standaard downloadmap",
+      "change": "Wijzigen",
+      "quality": "Voorkeurskwaliteit",
+      "format": "Voorkeursformaat",
+      "autoOpen": "Map automatisch openen na download",
+      "language": "Taal",
+      "filenameTemplate": "Bestandsnaam",
+      "filenameTemplateOptions": {
+        "default": "Standaard — titel.ext",
+        "date": "Met datum — datum - titel.ext",
+        "uploader": "Met uploader — uploader/titel.ext"
+      }
+    },
+    "appearance": {
+      "heading": "Thema",
+      "themes": {
+        "light": "Licht",
+        "dark": "Donker",
+        "midnight": "Middernacht",
+        "cyberpunk": "Cyberpunk",
+        "ocean": "Oceaan",
+        "forest": "Bos"
+      }
+    },
+    "info": {
+      "version": "App-versie",
+      "ytDlpVersion": "yt-dlp-versie",
+      "ffmpegVersion": "FFmpeg-versie",
+      "notFound": "Niet gevonden",
+      "updateYtDlp": "yt-dlp bijwerken",
+      "updating": "Bijwerken…",
+      "updateSuccess": "Bijgewerkt.",
+      "checkForUpdate": "Controleren op updates",
+      "checking": "Controleren…",
+      "upToDate": "U gebruikt de nieuwste versie.",
+      "updateAvailable": "Een nieuwe versie ({version}) is beschikbaar.",
+      "viewRelease": "Release bekijken",
+      "support": "VirPull ondersteunen",
+      "disclaimerHeading": "Disclaimer",
+      "disclaimer": "Deze applicatie is bedoeld om op eigen risico te worden gebruikt. De ontwikkelaar is niet verantwoordelijk voor eventuele schade, problemen of juridische aansprakelijkheden die voortvloeien uit het gebruik van deze software. Houd u aan de auteursrechtwetgeving en gebruik de app uitsluitend voor persoonlijk gebruik."
+    }
+  },
+  "errors": {
+    "urlRequired": "Voer een video-URL in.",
+    "urlInvalid": "Dit lijkt geen geldige URL te zijn.",
+    "urlProtocol": "Alleen http:// en https:// URL's worden ondersteund.",
+    "folderRequired": "Kies een downloadlocatie.",
+    "folderNotAbsolute": "De downloadlocatie moet een absoluut pad zijn.",
+    "folderPermission": "Toegang geweigerd voor de geselecteerde downloadmap.",
+    "folderInvalid": "De geselecteerde downloadmap is niet bruikbaar.",
+    "binariesMissing": "yt-dlp of FFmpeg ontbreekt. Zie Instellingen voor meer details.",
+    "ytDlpMissing": "yt-dlp.exe is niet gevonden. Installeer de applicatie opnieuw.",
+    "ffmpegMissing": "FFmpeg is niet gevonden. Installeer de applicatie opnieuw.",
+    "componentMissing": "Een vereist onderdeel ontbreekt. Installeer de applicatie opnieuw.",
+    "startFailed": "yt-dlp kon niet worden gestart. Installeer de applicatie opnieuw.",
+    "noSpace": "Onvoldoende schijfruimte om de download te voltooien.",
+    "permissionDenied": "Toegang geweigerd. Kies een andere downloadmap en probeer het opnieuw.",
+    "ageRestricted": "Deze video vereist inloggen of heeft een leeftijdsbeperking en kan niet worden gedownload.",
+    "videoUnavailable": "Deze video is niet beschikbaar. Mogelijk is deze verwijderd of privé gemaakt.",
+    "expiredLink": "De downloadlink is verlopen. Verkrijg een nieuwe video-URL en probeer het opnieuw.",
+    "notFound": "De video kon niet worden gevonden op die URL.",
+    "unsupportedUrl": "Deze URL wordt niet ondersteund.",
+    "network": "Netwerkfout. Controleer uw internetverbinding en probeer het opnieuw.",
+    "writeFailed": "Het gedownloade bestand kon niet worden geschreven. Controleer de downloadmap en probeer het opnieuw.",
+    "invalidRequest": "Ongeldig downloadverzoek.",
+    "addFailed": "Toevoegen van de download is mislukt.",
+    "ytDlpUpdateFailed": "yt-dlp kon niet worden bijgewerkt. Controleer uw internetverbinding en probeer het opnieuw."
+  }
+}

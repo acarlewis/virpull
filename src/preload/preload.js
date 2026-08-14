@@ -30,5 +30,7 @@ contextBridge.exposeInMainWorld('api', {
   onQueueItemUpdated: (callback) => subscribe('queue:item-updated', callback),
   onQueueItemComplete: (callback) => subscribe('queue:item-complete', callback),
 
-  getAppVersion: () => ipcRenderer.invoke('app:get-version')
+  getAppVersion: () => ipcRenderer.invoke('app:get-version'),
+  checkForUpdate: () => ipcRenderer.invoke('app:check-for-update'),
+  openExternal: (url) => ipcRenderer.invoke('app:open-external', url)
 });

@@ -31,24 +31,6 @@ export function formatPercent(percent) {
   return Math.min(100, Math.max(0, Math.round(percent)));
 }
 
-const STATUS_LABELS = {
-  queued: 'Queued',
-  starting: 'Starting…',
-  'fetching-info': 'Fetching info…',
-  downloading: 'Downloading…',
-  merging: 'Merging…',
-  'extracting-audio': 'Extracting audio…',
-  processing: 'Finalizing…',
-  'already-downloaded': 'Already downloaded',
-  finished: 'Complete',
-  error: 'Error',
-  cancelled: 'Cancelled'
-};
-
-export function statusLabel(status) {
-  return STATUS_LABELS[status] ?? status ?? '';
-}
-
 const ACTIVE_STATUSES = new Set([
   'starting',
   'fetching-info',

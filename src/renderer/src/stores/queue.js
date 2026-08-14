@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { i18n, translateMessage, translateIpcError } from '../i18n';
 
 export const useQueueStore = defineStore('queue', {
   state: () => ({
@@ -14,9 +15,12 @@ export const useQueueStore = defineStore('queue', {
     // Preferences
     autoOpenFolder: true,
     theme: 'dark',
+    language: 'en',
+    filenameTemplate: '%(title)s.%(ext)s',
 
     // Sidebar
     sidebarView: 'queue', // 'queue' | 'settings'
+    settingsSection: 'general', // 'general' | 'appearance' | 'info'
 
     queue: [],
 
@@ -45,7 +49,10 @@ export const useQueueStore = defineStore('queue', {
       this.format = settings.format;
       this.autoOpenFolder = settings.autoOpenFolder;
       this.theme = settings.theme;
+      this.language = settings.language;
+      this.filenameTemplate = settings.filenameTemplate;
       this._applyTheme();
+      this._applyLanguage();
       this.binaries = binaries;
       this.queue = queueState;
       this._subscribe();
@@ -73,6 +80,10 @@ export const useQueueStore = defineStore('queue', {
       this.sidebarView = view;
     },
 
+    setSettingsSection(section) {
+      this.settingsSection = section;
+    },
+
     async browseFolder() {
       const dir = await window.api.selectDownloadFolder();
       if (dir) this.outputDir = dir;
@@ -83,7 +94,8 @@ export const useQueueStore = defineStore('queue', {
         downloadDir: this.outputDir,
         quality: this.quality,
         format: this.format,
-        autoOpenFolder: this.autoOpenFolder
+        autoOpenFolder: this.autoOpenFolder,
+        filenameTemplate: this.filenameTemplate
       });
     },
 
@@ -91,24 +103,39 @@ export const useQueueStore = defineStore('queue', {
       document.documentElement.dataset.theme = this.theme;
     },
 
-    async cycleTheme() {
-      this.theme = this.theme === 'dark' ? 'light' : 'dark';
+    async setTheme(theme) {
+      this.theme = theme;
       this._applyTheme();
-      await window.api.updateSettings({ theme: this.theme });
+      await window.api.updateSettings({ theme });
+    },
+
+    _applyLanguage() {
+      i18n.global.locale.value = this.language;
+    },
+
+    async setLanguage(language) {
+      this.language = language;
+      this._applyLanguage();
+      await window.api.updateSettings({ language });
+    },
+
+    async setFilenameTemplate(template) {
+      this.filenameTemplate = template;
+      await window.api.updateSettings({ filenameTemplate: template });
     },
 
     async addToQueue() {
       this.formError = '';
       if (!this.url.trim()) {
-        this.formError = 'Please enter a video URL.';
+        this.formError = translateMessage('errors.urlRequired');
         return;
       }
       if (!this.outputDir) {
-        this.formError = 'Please choose a download location.';
+        this.formError = translateMessage('errors.folderRequired');
         return;
       }
       if (!this.binariesReady) {
-        this.formError = 'yt-dlp or FFmpeg is missing. Check Settings for details.';
+        this.formError = translateMessage('errors.binariesMissing');
         return;
       }
       try {
@@ -119,14 +146,12 @@ export const useQueueStore = defineStore('queue', {
           url: this.url.trim(),
           outputDir: this.outputDir,
           quality: this.quality,
-          format: this.format
+          format: this.format,
+          filenameTemplate: this.filenameTemplate
         });
         this.url = '';
       } catch (err) {
-        const cleaned = err?.message
-          ?.replace(/^Error invoking remote method '.*?': ?/, '')
-          ?.replace(/^[A-Za-z]*Error: ?/, '');
-        this.formError = cleaned || 'Failed to add the download.';
+        this.formError = translateIpcError(err, 'errors.addFailed');
       }
     },
 
@@ -148,6 +173,14 @@ export const useQueueStore = defineStore('queue', {
       this.binaries.ytDlp.version = version;
       const refreshed = await window.api.checkBinaries();
       this.binaries = refreshed;
+    },
+
+    async checkForUpdate() {
+      return window.api.checkForUpdate();
+    },
+
+    async openExternal(url) {
+      await window.api.openExternal(url);
     }
   }
 });

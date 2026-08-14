@@ -1,0 +1,118 @@
+{
+  "form": {
+    "url": { "label": "URL", "placeholder": "Collez l'URL de la vidéo ou M3U8", "paste": "Coller" },
+    "folder": { "label": "Enregistrer dans", "placeholder": "Choisissez un dossier de téléchargement", "browse": "Parcourir" },
+    "quality": {
+      "label": "Qualité",
+      "best": "Meilleure qualité disponible",
+      "p2160": "2160p (4K)",
+      "p1440": "1440p (2K)",
+      "p1080": "1080p",
+      "p720": "720p",
+      "p480": "480p",
+      "p360": "360p"
+    },
+    "format": { "label": "Format", "mp4": "MP4", "mkv": "MKV", "webm": "WEBM", "mp3": "MP3 (audio uniquement)" },
+    "addToQueue": "Ajouter à la file d'attente"
+  },
+  "binariesWarning": {
+    "prefix": "Composants manquants :",
+    "suffix": "introuvable(s). Voir les paramètres pour plus de détails."
+  },
+  "queue": {
+    "tabLabel": "File d'attente",
+    "empty": {
+      "title": "Aucun téléchargement pour le moment.",
+      "hint": "Collez une URL et cliquez sur « Ajouter à la file d'attente » pour commencer."
+    },
+    "cancel": "Annuler",
+    "remove": "Supprimer",
+    "openFolder": "Ouvrir le dossier",
+    "left": "restant"
+  },
+  "status": {
+    "queued": "En attente",
+    "starting": "Démarrage…",
+    "fetching-info": "Récupération des informations…",
+    "downloading": "Téléchargement…",
+    "merging": "Fusion…",
+    "extracting-audio": "Extraction audio…",
+    "processing": "Finalisation…",
+    "already-downloaded": "Déjà téléchargé",
+    "finished": "Terminé",
+    "error": "Erreur",
+    "cancelled": "Annulé"
+  },
+  "settings": {
+    "tabLabel": "Paramètres",
+    "nav": { "general": "Général", "appearance": "Apparence", "info": "Infos" },
+    "general": {
+      "downloadFolder": "Dossier de téléchargement par défaut",
+      "change": "Modifier",
+      "quality": "Qualité préférée",
+      "format": "Format préféré",
+      "autoOpen": "Ouvrir automatiquement le dossier après le téléchargement",
+      "language": "Langue",
+      "filenameTemplate": "Nom de fichier",
+      "filenameTemplateOptions": {
+        "default": "Par défaut — titre.ext",
+        "date": "Avec la date — date - titre.ext",
+        "uploader": "Avec l'auteur — auteur/titre.ext"
+      }
+    },
+    "appearance": {
+      "heading": "Thème",
+      "themes": {
+        "light": "Clair",
+        "dark": "Sombre",
+        "midnight": "Minuit",
+        "cyberpunk": "Cyberpunk",
+        "ocean": "Océan",
+        "forest": "Forêt"
+      }
+    },
+    "info": {
+      "version": "Version de l'application",
+      "ytDlpVersion": "Version de yt-dlp",
+      "ffmpegVersion": "Version de FFmpeg",
+      "notFound": "Introuvable",
+      "updateYtDlp": "Mettre à jour yt-dlp",
+      "updating": "Mise à jour…",
+      "updateSuccess": "Mise à jour réussie.",
+      "checkForUpdate": "Vérifier les mises à jour",
+      "checking": "Vérification…",
+      "upToDate": "Vous utilisez la dernière version.",
+      "updateAvailable": "Une nouvelle version ({version}) est disponible.",
+      "viewRelease": "Voir la version",
+      "support": "Soutenir VirPull",
+      "disclaimerHeading": "Avertissement",
+      "disclaimer": "Cette application est destinée à être utilisée à vos propres risques. Le développeur n'est pas responsable des dommages, problèmes ou responsabilités légales découlant de l'utilisation de ce logiciel. Veuillez respecter les lois sur le droit d'auteur et l'utiliser dans un cadre personnel."
+    }
+  },
+  "errors": {
+    "urlRequired": "Veuillez entrer une URL de vidéo.",
+    "urlInvalid": "Cela ne ressemble pas à une URL valide.",
+    "urlProtocol": "Seules les URL http:// et https:// sont prises en charge.",
+    "folderRequired": "Veuillez choisir un emplacement de téléchargement.",
+    "folderNotAbsolute": "L'emplacement de téléchargement doit être un chemin absolu.",
+    "folderPermission": "Accès refusé pour le dossier de téléchargement sélectionné.",
+    "folderInvalid": "Le dossier de téléchargement sélectionné n'est pas utilisable.",
+    "binariesMissing": "yt-dlp ou FFmpeg est manquant. Consultez les paramètres pour plus de détails.",
+    "ytDlpMissing": "yt-dlp.exe est introuvable. Veuillez réinstaller l'application.",
+    "ffmpegMissing": "FFmpeg est introuvable. Veuillez réinstaller l'application.",
+    "componentMissing": "Un composant requis est manquant. Veuillez réinstaller l'application.",
+    "startFailed": "Échec du démarrage de yt-dlp. Veuillez réinstaller l'application.",
+    "noSpace": "Espace disque insuffisant pour terminer le téléchargement.",
+    "permissionDenied": "Accès refusé. Choisissez un autre dossier de téléchargement et réessayez.",
+    "ageRestricted": "Cette vidéo nécessite une connexion ou est soumise à une restriction d'âge et ne peut pas être téléchargée.",
+    "videoUnavailable": "Cette vidéo n'est pas disponible. Elle a peut-être été supprimée ou rendue privée.",
+    "expiredLink": "Le lien de téléchargement a expiré. Veuillez obtenir une nouvelle URL vidéo et réessayer.",
+    "notFound": "La vidéo est introuvable à cette URL.",
+    "unsupportedUrl": "Cette URL n'est pas prise en charge.",
+    "network": "Erreur réseau. Vérifiez votre connexion internet et réessayez.",
+    "writeFailed": "Impossible d'écrire le fichier téléchargé. Vérifiez le dossier de téléchargement et réessayez.",
+    "invalidRequest": "Demande de téléchargement invalide.",
+    "addFailed": "Échec de l'ajout du téléchargement.",
+    "ytDlpUpdateFailed": "Impossible de mettre à jour yt-dlp. Vérifiez votre connexion internet et réessayez."
+  }
+}
