@@ -16,11 +16,11 @@ Built with Electron, Vue 3, Pinia, and Vite. yt-dlp and FFmpeg do the actual dow
 
 ## Installation
 
-VirPull is a Windows desktop app; there's no npm package to install globally.
+**[⬇ Download VirPull-Setup.exe](https://github.com/acarlewis/virpull/releases/latest/download/VirPull-Setup.exe)**
 
-**Prebuilt installer:** if this repo has a [Releases](../../releases) page, download the latest `VirPull-*-Setup.exe`, run it, and you're done — yt-dlp and FFmpeg are bundled in, no extra downloads required.
+Run the installer — yt-dlp and FFmpeg are bundled in, so there's nothing else to install. Windows SmartScreen will likely warn that the app is unrecognized, since the installer isn't code-signed: click **More info → Run anyway** to proceed.
 
-**No release available yet, or you want to build it yourself:** see [Building from source](#building-from-source) below.
+Prefer to build it yourself instead? See [Building from source](#building-from-source) below.
 
 ## Building from source
 
