@@ -5,7 +5,8 @@ export const DEFAULT_SETTINGS = {
   downloadDir: null, // resolved lazily to the Windows Downloads folder
   quality: 'best',
   format: 'mp4',
-  autoOpenFolder: true
+  autoOpenFolder: true,
+  theme: 'dark' // 'light' | 'dark'
 };
 
 let cache = null;
@@ -15,7 +16,10 @@ function readFromDisk() {
   try {
     const raw = fs.readFileSync(filePath, 'utf-8');
     const parsed = JSON.parse(raw);
-    return { ...DEFAULT_SETTINGS, ...parsed };
+    const merged = { ...DEFAULT_SETTINGS, ...parsed };
+    // Older builds had a 'system' theme option; fold it into the new default.
+    if (merged.theme !== 'light' && merged.theme !== 'dark') merged.theme = 'dark';
+    return merged;
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
