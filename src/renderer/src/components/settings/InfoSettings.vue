@@ -111,6 +111,7 @@ function openRelease() {
       <div class="disclaimer-heading">{{ t('settings.info.disclaimerHeading') }}</div>
       <p class="disclaimer-text">{{ t('settings.info.disclaimer') }}</p>
     </div>
+    <p class="disclaimer-text">{{ t('settings.info.note') }}</p>
   </div>
 </template>
 
