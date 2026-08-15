@@ -15,13 +15,53 @@
     "format": { "label": "Format", "mp4": "MP4", "mkv": "MKV", "webm": "WEBM", "mp3": "MP3 (audio only)" },
     "addToQueue": "Add to Queue"
   },
+  "qualityMode": {
+    "label": "Quality mode",
+    "resolvesTo": "→ {quality}",
+    "modes": {
+      "recommended": "⭐ Recommended",
+      "best": "Best quality",
+      "balanced": "Balanced",
+      "smallest": "Smallest file",
+      "custom": "Custom"
+    }
+  },
+  "speed": {
+    "label": "Download speed",
+    "unlimited": "Unlimited",
+    "custom": "Custom",
+    "customPlaceholder": "Value"
+  },
   "binariesWarning": {
     "prefix": "Missing components:",
     "suffix": "not found. See Settings for details."
   },
-  "youtube": {
-    "fetchingFormats": "Fetching available qualities…",
-    "qualitiesFound": "{count} quality options found for this video"
+  "analysis": {
+    "analyzeButton": "Analyze",
+    "analyzeButtonBusy": "Analyzing…",
+    "analyzing": "Analyzing…",
+    "qualitiesFound": "{count} quality options found for this video",
+    "untitled": "Untitled video",
+    "mergeNote": "Video and audio will be merged automatically using FFmpeg."
+  },
+  "preview": {
+    "button": "Preview",
+    "close": "Close preview",
+    "unavailable": "Preview unavailable for this video."
+  },
+  "clipboard": {
+    "detected": "Video URL detected in clipboard",
+    "use": "Use",
+    "dismiss": "Dismiss"
+  },
+  "recognition": {
+    "youtube": { "title": "YouTube", "subtitle": "Video detected" },
+    "hls": { "title": "HLS Stream", "subtitle": "M3U8 video stream detected" },
+    "supported": { "subtitle": "Video detected" },
+    "unsupported": {
+      "title": "Unsupported website",
+      "subtitle": "VirPull couldn't identify a downloadable video from this website."
+    }
   },
   "queue": {
     "tabLabel": "Queue",
@@ -56,6 +96,8 @@
       "quality": "Preferred quality",
       "format": "Preferred format",
       "autoOpen": "Auto-open folder after download",
+      "clipboardDetection": "Detect video URLs copied to clipboard",
+      "previewEnabled": "Enable video preview",
       "language": "Language",
       "filenameTemplate": "Output filename",
       "filenameTemplateOptions": {
@@ -109,6 +151,7 @@
     "startFailed": "Failed to start yt-dlp. Please reinstall the application.",
     "noSpace": "Not enough disk space to complete the download.",
     "permissionDenied": "Permission denied. Choose a different download folder and try again.",
+    "drmProtected": "This video appears to use DRM protection and cannot be downloaded.",
     "ageRestricted": "This video requires sign-in or is age-restricted and cannot be downloaded.",
     "membersOnly": "This video is restricted to channel members and cannot be downloaded.",
     "notYetAvailable": "This video is not yet available (an upcoming premiere or live stream).",

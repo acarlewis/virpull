@@ -8,11 +8,21 @@
       runtime. This only ever runs against our own bundled locale JSON
       (src/renderer/src/locales/*.json) — never remote or user-supplied
       content — so it doesn't extend to arbitrary script injection risk.
-      All other content stays restricted to 'self'.
+
+      img-src allows any https: host because video thumbnails come from
+      whatever CDN each site/extractor uses (i.ytimg.com, vimeocdn.com,
+      ...) — there's no fixed list to allowlist. media-src/connect-src are
+      broadened the same way for the video preview feature: hls.js fetches
+      arbitrary .m3u8 manifests/segments and direct-file previews play from
+      whatever host the source URL points to, neither of which is a fixed
+      list either. frame-src is scoped narrowly to YouTube's own
+      privacy-oriented embed domain, used only for the legitimate YouTube
+      preview (never as a way to load/bypass other protected players).
+      Everything else stays restricted to 'self'.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' data: https: blob:; connect-src 'self' https:; frame-src https://www.youtube-nocookie.com"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VirPull</title>

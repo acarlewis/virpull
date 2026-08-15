@@ -80,6 +80,26 @@ function onLanguageChange(event) {
         @change="store.autoOpenFolder = $event.target.checked; store.saveSettings()"
       />
     </div>
+
+    <div class="settings-group settings-row">
+      <label class="settings-key" for="settings-clipboard">{{ t('settings.general.clipboardDetection') }}</label>
+      <input
+        id="settings-clipboard"
+        type="checkbox"
+        :checked="store.clipboardDetectionEnabled"
+        @change="store.setClipboardDetectionEnabled($event.target.checked)"
+      />
+    </div>
+
+    <div class="settings-group settings-row">
+      <label class="settings-key" for="settings-preview">{{ t('settings.general.previewEnabled') }}</label>
+      <input
+        id="settings-preview"
+        type="checkbox"
+        :checked="store.previewEnabled"
+        @change="store.setPreviewEnabled($event.target.checked)"
+      />
+    </div>
   </div>
 </template>
 

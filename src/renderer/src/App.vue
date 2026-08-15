@@ -1,10 +1,17 @@
 <script setup>
-import { onMounted, onUnmounted, watch } from 'vue';
+import { onMounted, onUnmounted, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQueueStore } from './stores/queue';
+import { formatHeightLabel } from './utils/format';
 import UrlInput from './components/UrlInput.vue';
+import UrlRecognitionBadge from './components/UrlRecognitionBadge.vue';
+import VideoInfoCard from './components/VideoInfoCard.vue';
+import PreviewModal from './components/PreviewModal.vue';
+import ClipboardToast from './components/ClipboardToast.vue';
 import FolderPicker from './components/FolderPicker.vue';
 import QualitySelect from './components/QualitySelect.vue';
+import QualityModeSelect from './components/QualityModeSelect.vue';
+import DownloadSpeedSelect from './components/DownloadSpeedSelect.vue';
 import FormatSelect from './components/FormatSelect.vue';
 import ErrorBanner from './components/ErrorBanner.vue';
 import SettingsPanel from './components/SettingsPanel.vue';
@@ -20,17 +27,23 @@ onUnmounted(() => {
   store.unsubscribers.forEach((unsub) => unsub());
 });
 
-// Detects YouTube URLs automatically and probes real available formats;
-// direct-video/HLS URLs never match and keep using the static quality list.
+// A URL edit invalidates whatever was previously analyzed — reset rather
+// than show stale metadata/quality options for a different video.
 watch(
   () => store.url,
-  () => store.scheduleFormatProbe()
+  () => store.onUrlChanged()
 );
 
 function openAppearance() {
   store.setSidebarView('settings');
   store.setSettingsSection('appearance');
 }
+
+const resolvedQualityLabel = computed(() => {
+  if (store.quality === 'best') return t('form.quality.best');
+  const height = Number(store.quality);
+  return Number.isFinite(height) ? formatHeightLabel(height) : store.quality;
+});
 </script>
 
 <template>
@@ -65,24 +78,31 @@ function openAppearance() {
           {{ t('binariesWarning.suffix') }}
         </div>
 
-        <UrlInput v-model="store.url" />
+        <UrlInput v-model="store.url" :analyzing="store.isAnalyzing" @analyze="store.analyzeUrl" />
+
+        <UrlRecognitionBadge v-if="store.url.trim()" />
+
+        <div v-if="store.isAnalyzing" class="analysis-status loading">{{ t('analysis.analyzing') }}</div>
+        <div v-else-if="store.analysis.status === 'error'" class="analysis-status error">
+          {{ store.analysis.errorMessage }}
+        </div>
+        <div v-else-if="store.probedHeights && store.probedHeights.length" class="analysis-status ready">
+          {{ t('analysis.qualitiesFound', { count: store.probedHeights.length }) }}
+        </div>
+
+        <VideoInfoCard />
 
         <FolderPicker v-model="store.outputDir" @browse="store.browseFolder" />
 
         <div class="row-2">
-          <QualitySelect v-model="store.quality" />
+          <QualityModeSelect />
           <FormatSelect v-model="store.format" />
         </div>
 
-        <div v-if="store.youtubeProbe.status === 'loading'" class="youtube-status loading">
-          {{ t('youtube.fetchingFormats') }}
-        </div>
-        <div v-else-if="store.youtubeProbe.status === 'error'" class="youtube-status error">
-          {{ store.youtubeProbe.errorMessage }}
-        </div>
-        <div v-else-if="store.probedHeights && store.probedHeights.length" class="youtube-status ready">
-          {{ t('youtube.qualitiesFound', { count: store.probedHeights.length }) }}
-        </div>
+        <QualitySelect v-if="store.qualityMode === 'custom'" v-model="store.quality" />
+        <div v-else class="resolved-quality">{{ t('qualityMode.resolvesTo', { quality: resolvedQualityLabel }) }}</div>
+
+        <DownloadSpeedSelect />
 
         <div class="actions">
           <button type="button" class="btn-primary" @click="store.addToQueue">{{ t('form.addToQueue') }}</button>
@@ -117,6 +137,9 @@ function openAppearance() {
         </div>
       </aside>
     </div>
+
+    <ClipboardToast />
+    <PreviewModal />
   </div>
 </template>
 
@@ -203,17 +226,22 @@ function openAppearance() {
   opacity: 0.5;
   cursor: not-allowed;
 }
-.youtube-status {
+.resolved-quality {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: -8px;
+}
+.analysis-status {
   font-size: 12.5px;
   margin-top: -8px;
 }
-.youtube-status.loading {
+.analysis-status.loading {
   color: var(--text-muted);
 }
-.youtube-status.error {
+.analysis-status.error {
   color: var(--danger);
 }
-.youtube-status.ready {
+.analysis-status.ready {
   color: var(--success);
 }
 .binaries-warning {

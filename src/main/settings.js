@@ -3,6 +3,7 @@ import { getSettingsFilePath, getDefaultDownloadsDir } from './paths.js';
 
 export const VALID_THEMES = ['light', 'dark', 'midnight', 'cyberpunk', 'ocean', 'forest'];
 export const VALID_LANGUAGES = ['en', 'fr', 'nl'];
+export const VALID_QUALITY_MODES = ['recommended', 'best', 'balanced', 'smallest', 'custom'];
 
 // Custom themes have no native equivalent; nativeTheme only knows
 // light/dark, so each maps to whichever native chrome (dialogs, etc.)
@@ -21,6 +22,12 @@ export const FILENAME_TEMPLATES = {
   uploader: '%(uploader)s/%(title)s.%(ext)s'
 };
 
+// yt-dlp's --limit-rate accepts a plain number of bytes/sec or a number
+// followed by K/M/G (e.g. "500K", "4.2M"). null means unlimited.
+export function isValidSpeedLimit(value) {
+  return value === null || (typeof value === 'string' && /^\d+(\.\d+)?[KMG]$/i.test(value));
+}
+
 export const DEFAULT_SETTINGS = {
   downloadDir: null, // resolved lazily to the Windows Downloads folder
   quality: 'best',
@@ -28,7 +35,11 @@ export const DEFAULT_SETTINGS = {
   autoOpenFolder: true,
   theme: 'dark',
   language: 'en',
-  filenameTemplate: FILENAME_TEMPLATES.default
+  filenameTemplate: FILENAME_TEMPLATES.default,
+  qualityMode: 'recommended',
+  downloadSpeedLimit: null,
+  clipboardDetectionEnabled: true,
+  previewEnabled: true
 };
 
 let cache = null;
@@ -44,6 +55,10 @@ function readFromDisk() {
     if (!Object.values(FILENAME_TEMPLATES).includes(merged.filenameTemplate)) {
       merged.filenameTemplate = FILENAME_TEMPLATES.default;
     }
+    if (!VALID_QUALITY_MODES.includes(merged.qualityMode)) merged.qualityMode = 'recommended';
+    if (!isValidSpeedLimit(merged.downloadSpeedLimit)) merged.downloadSpeedLimit = null;
+    merged.clipboardDetectionEnabled = Boolean(merged.clipboardDetectionEnabled);
+    merged.previewEnabled = Boolean(merged.previewEnabled);
     return merged;
   } catch {
     return { ...DEFAULT_SETTINGS };

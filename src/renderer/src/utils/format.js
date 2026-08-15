@@ -26,6 +26,10 @@ export function formatEta(seconds) {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
+// Same h:mm:ss/mm:ss shape as formatEta — duration and ETA are both just
+// "a number of seconds", so this is a semantic alias rather than a copy.
+export const formatDuration = formatEta;
+
 export function formatPercent(percent) {
   if (percent === null || percent === undefined || Number.isNaN(percent)) return 0;
   return Math.min(100, Math.max(0, Math.round(percent)));

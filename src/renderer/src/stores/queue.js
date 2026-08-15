@@ -1,11 +1,7 @@
 import { defineStore } from 'pinia';
 import { i18n, translateMessage, translateIpcError } from '../i18n';
-import { isYouTubeUrl } from '../utils/youtube';
-
-const PROBE_DEBOUNCE_MS = 600;
-// Not store state — a plain debounce handle doesn't need to be reactive,
-// and there's only ever one store instance.
-let probeTimer = null;
+import { quickRecognize } from '../utils/urlRecognition';
+import { recommendQuality } from '../utils/recommendation';
 
 export const useQueueStore = defineStore('queue', {
   state: () => ({
@@ -16,13 +12,14 @@ export const useQueueStore = defineStore('queue', {
     outputDir: '',
     quality: 'best',
     format: 'mp4',
+    qualityMode: 'recommended', // 'recommended' | 'best' | 'balanced' | 'smallest' | 'custom'
+    downloadSpeedLimit: null, // null (unlimited) | yt-dlp --limit-rate value, e.g. '5M'
     formError: '',
 
-    // YouTube format probing (see scheduleFormatProbe)
-    youtubeProbe: {
-      status: 'idle', // 'idle' | 'loading' | 'ready' | 'error'
-      heights: [],
-      title: null,
+    // URL analysis (explicit Analyze button — see analyzeUrl())
+    analysis: {
+      status: 'idle', // 'idle' | 'analyzing' | 'ready' | 'error'
+      data: null,
       errorMessage: ''
     },
 
@@ -31,6 +28,15 @@ export const useQueueStore = defineStore('queue', {
     theme: 'dark',
     language: 'en',
     filenameTemplate: '%(title)s.%(ext)s',
+    clipboardDetectionEnabled: true,
+    previewEnabled: true,
+
+    // Non-intrusive "we noticed a URL in your clipboard" suggestion — never
+    // auto-filled or auto-downloaded, only shown for the user to accept.
+    clipboardSuggestion: null,
+    lastDismissedClipboardUrl: null,
+
+    previewOpen: false,
 
     // Sidebar
     sidebarView: 'queue', // 'queue' | 'settings'
@@ -49,8 +55,27 @@ export const useQueueStore = defineStore('queue', {
   getters: {
     binariesReady: (state) => state.binaries.ytDlp.available && state.binaries.ffmpeg.available,
     activeCount: (state) => state.queue.filter((i) => !['finished', 'error', 'cancelled'].includes(i.status)).length,
-    isProbingFormats: (state) => state.youtubeProbe.status === 'loading',
-    probedHeights: (state) => (state.youtubeProbe.status === 'ready' ? state.youtubeProbe.heights : null)
+    isAnalyzing: (state) => state.analysis.status === 'analyzing',
+    // Instant heuristic badge while typing, upgraded to the confirmed result
+    // once Analyze actually runs (or downgraded to "unsupported" if it
+    // failed specifically because yt-dlp has no extractor for it).
+    urlRecognition: (state) => {
+      if (state.analysis.status === 'ready' && state.analysis.data) {
+        const { platform, type } = state.analysis.data;
+        return { supported: true, platform, type };
+      }
+      if (state.analysis.status === 'error' && state.analysis.errorMessage) {
+        return { supported: false, platform: null, type: 'invalid' };
+      }
+      return quickRecognize(state.url);
+    },
+    probedHeights: (state) => {
+      if (state.analysis.status !== 'ready' || !state.analysis.data) return null;
+      const heights = [
+        ...new Set(state.analysis.data.formats.filter((f) => f.hasVideo && f.height).map((f) => f.height))
+      ].sort((a, b) => b - a);
+      return heights;
+    }
   },
 
   actions: {
@@ -67,6 +92,10 @@ export const useQueueStore = defineStore('queue', {
       this.theme = settings.theme;
       this.language = settings.language;
       this.filenameTemplate = settings.filenameTemplate;
+      this.qualityMode = settings.qualityMode;
+      this.downloadSpeedLimit = settings.downloadSpeedLimit;
+      this.clipboardDetectionEnabled = settings.clipboardDetectionEnabled;
+      this.previewEnabled = settings.previewEnabled;
       this._applyTheme();
       this._applyLanguage();
       this.binaries = binaries;
@@ -90,6 +119,44 @@ export const useQueueStore = defineStore('queue', {
           }
         })
       );
+      this.unsubscribers.push(window.api.onClipboardUrlDetected((url) => this._handleClipboardUrl(url)));
+    },
+
+    _handleClipboardUrl(url) {
+      if (!this.clipboardDetectionEnabled) return;
+      if (url === this.url.trim()) return;
+      if (url === this.lastDismissedClipboardUrl) return;
+      this.clipboardSuggestion = url;
+    },
+
+    acceptClipboardSuggestion() {
+      if (!this.clipboardSuggestion) return;
+      this.url = this.clipboardSuggestion;
+      this.clipboardSuggestion = null;
+    },
+
+    dismissClipboardSuggestion() {
+      this.lastDismissedClipboardUrl = this.clipboardSuggestion;
+      this.clipboardSuggestion = null;
+    },
+
+    async setClipboardDetectionEnabled(enabled) {
+      this.clipboardDetectionEnabled = enabled;
+      if (!enabled) this.clipboardSuggestion = null;
+      await window.api.updateSettings({ clipboardDetectionEnabled: enabled });
+    },
+
+    async setPreviewEnabled(enabled) {
+      this.previewEnabled = enabled;
+      await window.api.updateSettings({ previewEnabled: enabled });
+    },
+
+    openPreview() {
+      this.previewOpen = true;
+    },
+
+    closePreview() {
+      this.previewOpen = false;
     },
 
     setSidebarView(view) {
@@ -140,52 +207,58 @@ export const useQueueStore = defineStore('queue', {
       await window.api.updateSettings({ filenameTemplate: template });
     },
 
-    // Called (debounced) whenever the URL field changes. Only YouTube URLs
-    // trigger a probe — direct-video/HLS URLs keep using the fixed generic
-    // quality list, unchanged.
-    scheduleFormatProbe() {
-      clearTimeout(probeTimer);
-      const url = this.url.trim();
-      // A previously-probed quality (e.g. 144p, picked for one YouTube
-      // video) can be invalid for whatever the URL just changed to — a
-      // different video with fewer resolutions, or a direct file that only
-      // has one. 'best' is always valid, so reset on every URL change
-      // rather than trying to carry a selection across contexts.
-      this.quality = 'best';
-      if (!isYouTubeUrl(url)) {
-        this.youtubeProbe = { status: 'idle', heights: [], title: null, errorMessage: '' };
-        return;
-      }
-      this.youtubeProbe = { status: 'loading', heights: [], title: null, errorMessage: '' };
-      probeTimer = setTimeout(() => this._runFormatProbe(url), PROBE_DEBOUNCE_MS);
+    // In every mode except 'custom', the resolution is derived automatically
+    // from the current analysis (or 'best' if nothing's been analyzed yet)
+    // rather than picked by hand — see utils/recommendation.js.
+    _applyQualityMode() {
+      if (this.qualityMode === 'custom') return;
+      this.quality = recommendQuality(this.analysis.data, this.qualityMode);
     },
 
-    async _runFormatProbe(url) {
-      // The URL field may have changed again while we were debouncing/
-      // waiting on yt-dlp; ignore stale results for a URL that's no longer
-      // current rather than clobbering newer state with an old response.
-      if (this.url.trim() !== url) return;
+    async setQualityMode(mode) {
+      this.qualityMode = mode;
+      this._applyQualityMode();
+      await window.api.updateSettings({ qualityMode: mode });
+    },
+
+    async setDownloadSpeedLimit(value) {
+      this.downloadSpeedLimit = value;
+      await window.api.updateSettings({ downloadSpeedLimit: value });
+    },
+
+    // A URL edit invalidates whatever was previously analyzed/selected —
+    // reset rather than risk showing stale metadata or an out-of-range
+    // quality for the new URL.
+    onUrlChanged() {
+      this.analysis = { status: 'idle', data: null, errorMessage: '' };
+      this._applyQualityMode();
+    },
+
+    async analyzeUrl() {
+      const url = this.url.trim();
+      if (!url) {
+        this.formError = translateMessage('errors.urlRequired');
+        return;
+      }
+      if (!this.binariesReady) {
+        this.formError = translateMessage('errors.binariesMissing');
+        return;
+      }
+      this.formError = '';
+      this.analysis = { status: 'analyzing', data: null, errorMessage: '' };
       try {
-        const result = await window.api.probeFormats(url);
-        if (this.url.trim() !== url) return;
-        this.youtubeProbe = {
-          status: 'ready',
-          heights: result.heights || [],
-          title: result.title,
-          errorMessage: ''
-        };
-        const validValues = ['best', ...this.youtubeProbe.heights.map(String)];
-        if (!validValues.includes(this.quality)) {
-          this.quality = 'best';
+        const data = await window.api.analyzeUrl(url);
+        if (this.url.trim() !== url) return; // URL changed while analyzing; discard stale result
+        this.analysis = { status: 'ready', data, errorMessage: '' };
+        if (this.qualityMode === 'custom') {
+          const validValues = ['best', ...(this.probedHeights || []).map(String)];
+          if (!validValues.includes(this.quality)) this.quality = 'best';
+        } else {
+          this._applyQualityMode();
         }
       } catch (err) {
         if (this.url.trim() !== url) return;
-        this.youtubeProbe = {
-          status: 'error',
-          heights: [],
-          title: null,
-          errorMessage: translateIpcError(err, 'errors.network')
-        };
+        this.analysis = { status: 'error', data: null, errorMessage: translateIpcError(err, 'errors.network') };
       }
     },
 
@@ -212,9 +285,11 @@ export const useQueueStore = defineStore('queue', {
           outputDir: this.outputDir,
           quality: this.quality,
           format: this.format,
-          filenameTemplate: this.filenameTemplate
+          filenameTemplate: this.filenameTemplate,
+          downloadSpeedLimit: this.downloadSpeedLimit
         });
         this.url = '';
+        this.onUrlChanged();
       } catch (err) {
         this.formError = translateIpcError(err, 'errors.addFailed');
       }
