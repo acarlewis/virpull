@@ -15,13 +15,53 @@
     "format": { "label": "Format", "mp4": "MP4", "mkv": "MKV", "webm": "WEBM", "mp3": "MP3 (audio uniquement)" },
     "addToQueue": "Ajouter à la file d'attente"
   },
+  "qualityMode": {
+    "label": "Mode de qualité",
+    "resolvesTo": "→ {quality}",
+    "modes": {
+      "recommended": "⭐ Recommandé",
+      "best": "Meilleure qualité",
+      "balanced": "Équilibré",
+      "smallest": "Fichier le plus petit",
+      "custom": "Personnalisé"
+    }
+  },
+  "speed": {
+    "label": "Vitesse de téléchargement",
+    "unlimited": "Illimitée",
+    "custom": "Personnalisée",
+    "customPlaceholder": "Valeur"
+  },
   "binariesWarning": {
     "prefix": "Composants manquants :",
     "suffix": "introuvable(s). Voir les paramètres pour plus de détails."
   },
-  "youtube": {
-    "fetchingFormats": "Récupération des qualités disponibles…",
-    "qualitiesFound": "{count} qualités disponibles pour cette vidéo"
+  "analysis": {
+    "analyzeButton": "Analyser",
+    "analyzeButtonBusy": "Analyse…",
+    "analyzing": "Analyse en cours…",
+    "qualitiesFound": "{count} qualités disponibles pour cette vidéo",
+    "untitled": "Vidéo sans titre",
+    "mergeNote": "La vidéo et l'audio seront fusionnés automatiquement avec FFmpeg."
+  },
+  "preview": {
+    "button": "Aperçu",
+    "close": "Fermer l'aperçu",
+    "unavailable": "Aperçu non disponible pour cette vidéo."
+  },
+  "clipboard": {
+    "detected": "URL vidéo détectée dans le presse-papiers",
+    "use": "Utiliser",
+    "dismiss": "Ignorer"
+  },
+  "recognition": {
+    "youtube": { "title": "YouTube", "subtitle": "Vidéo détectée" },
+    "hls": { "title": "Flux HLS", "subtitle": "Flux vidéo M3U8 détecté" },
+    "supported": { "subtitle": "Vidéo détectée" },
+    "unsupported": {
+      "title": "Site non pris en charge",
+      "subtitle": "VirPull n'a pas pu identifier de vidéo téléchargeable sur ce site."
+    }
   },
   "queue": {
     "tabLabel": "File d'attente",
@@ -56,6 +96,8 @@
       "quality": "Qualité préférée",
       "format": "Format préféré",
       "autoOpen": "Ouvrir automatiquement le dossier après le téléchargement",
+      "clipboardDetection": "Détecter les URL vidéo copiées dans le presse-papiers",
+      "previewEnabled": "Activer l'aperçu vidéo",
       "language": "Langue",
       "filenameTemplate": "Nom de fichier",
       "filenameTemplateOptions": {
@@ -109,6 +151,7 @@
     "startFailed": "Échec du démarrage de yt-dlp. Veuillez réinstaller l'application.",
     "noSpace": "Espace disque insuffisant pour terminer le téléchargement.",
     "permissionDenied": "Accès refusé. Choisissez un autre dossier de téléchargement et réessayez.",
+    "drmProtected": "Cette vidéo semble être protégée par DRM et ne peut pas être téléchargée.",
     "ageRestricted": "Cette vidéo nécessite une connexion ou est soumise à une restriction d'âge et ne peut pas être téléchargée.",
     "membersOnly": "Cette vidéo est réservée aux membres de la chaîne et ne peut pas être téléchargée.",
     "notYetAvailable": "Cette vidéo n'est pas encore disponible (avant-première ou diffusion en direct à venir).",

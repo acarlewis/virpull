@@ -3,7 +3,11 @@ import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 const model = defineModel({ type: String, default: '' });
-defineProps({ disabled: { type: Boolean, default: false } });
+const props = defineProps({
+  disabled: { type: Boolean, default: false },
+  analyzing: { type: Boolean, default: false }
+});
+const emit = defineEmits(['analyze']);
 
 async function pasteFromClipboard() {
   try {
@@ -28,9 +32,18 @@ async function pasteFromClipboard() {
         :disabled="disabled"
         autocomplete="off"
         spellcheck="false"
+        @keydown.enter="!props.analyzing && !props.disabled && model.trim() && emit('analyze')"
       />
       <button type="button" class="btn-secondary" :disabled="disabled" @click="pasteFromClipboard">
         {{ t('form.url.paste') }}
+      </button>
+      <button
+        type="button"
+        class="btn-primary-outline"
+        :disabled="disabled || analyzing || !model.trim()"
+        @click="emit('analyze')"
+      >
+        {{ analyzing ? t('analysis.analyzeButtonBusy') : t('analysis.analyzeButton') }}
       </button>
     </div>
   </div>
@@ -81,6 +94,23 @@ async function pasteFromClipboard() {
   background: var(--bg);
 }
 .btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary-outline {
+  padding: 10px 14px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.btn-primary-outline:hover:not(:disabled) {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+.btn-primary-outline:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

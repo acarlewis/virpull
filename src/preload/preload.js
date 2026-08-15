@@ -2,10 +2,10 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 // Only a fixed, whitelisted set of channels may be subscribed to or invoked
 // from the renderer. No raw ipcRenderer object is ever exposed.
-const QUEUE_CHANNELS = ['queue:item-updated', 'queue:item-complete'];
+const SUBSCRIBABLE_CHANNELS = ['queue:item-updated', 'queue:item-complete', 'clipboard:url-detected'];
 
 function subscribe(channel, callback) {
-  if (!QUEUE_CHANNELS.includes(channel)) return () => {};
+  if (!SUBSCRIBABLE_CHANNELS.includes(channel)) return () => {};
   const listener = (_event, payload) => callback(payload);
   ipcRenderer.on(channel, listener);
   return () => ipcRenderer.removeListener(channel, listener);
@@ -21,7 +21,7 @@ contextBridge.exposeInMainWorld('api', {
 
   checkBinaries: () => ipcRenderer.invoke('binaries:check'),
   updateYtDlp: () => ipcRenderer.invoke('binaries:update-ytdlp'),
-  probeFormats: (url) => ipcRenderer.invoke('formats:probe', url),
+  analyzeUrl: (url) => ipcRenderer.invoke('media:analyze', url),
 
   addToQueue: (options) => ipcRenderer.invoke('queue:add', options),
   cancelQueueItem: (id) => ipcRenderer.invoke('queue:cancel', id),
@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('api', {
 
   onQueueItemUpdated: (callback) => subscribe('queue:item-updated', callback),
   onQueueItemComplete: (callback) => subscribe('queue:item-complete', callback),
+  onClipboardUrlDetected: (callback) => subscribe('clipboard:url-detected', callback),
 
   getAppVersion: () => ipcRenderer.invoke('app:get-version'),
   checkForUpdate: () => ipcRenderer.invoke('app:check-for-update'),

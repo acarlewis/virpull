@@ -1,11 +1,19 @@
 import { ipcMain, dialog, shell, app, BrowserWindow, nativeTheme } from 'electron';
 import { execFile } from 'node:child_process';
 import { ValidationError } from './downloader.js';
-import { probeFormats } from './formats.js';
+import { analyzeUrl } from './analyzer.js';
 import { QueueManager } from './queue.js';
+import { ClipboardWatcher } from './clipboard.js';
 import { getYtDlpPath, getFfmpegPath, binaryExists, getDefaultDownloadsDir } from './paths.js';
 import * as settings from './settings.js';
-import { VALID_THEMES, VALID_LANGUAGES, FILENAME_TEMPLATES, THEME_NATIVE_SOURCE } from './settings.js';
+import {
+  VALID_THEMES,
+  VALID_LANGUAGES,
+  VALID_QUALITY_MODES,
+  FILENAME_TEMPLATES,
+  THEME_NATIVE_SOURCE,
+  isValidSpeedLimit
+} from './settings.js';
 
 const REPO = 'acarlewis/virpull';
 
@@ -51,10 +59,29 @@ export function registerIpcHandlers(mainWindow) {
     onEvent: (channel, payload) => sendToRenderer(mainWindow, channel, payload)
   });
 
+  const clipboardWatcher = new ClipboardWatcher({
+    isEnabled: () => settings.load().clipboardDetectionEnabled,
+    onUrlDetected: (url) => sendToRenderer(mainWindow, 'clipboard:url-detected', url)
+  });
+  clipboardWatcher.start();
+  mainWindow.on('closed', () => clipboardWatcher.stop());
+
   ipcMain.handle('settings:get', () => settings.load());
 
   ipcMain.handle('settings:update', (_event, partial) => {
-    const allowedKeys = ['downloadDir', 'quality', 'format', 'autoOpenFolder', 'theme', 'language', 'filenameTemplate'];
+    const allowedKeys = [
+      'downloadDir',
+      'quality',
+      'format',
+      'autoOpenFolder',
+      'theme',
+      'language',
+      'filenameTemplate',
+      'qualityMode',
+      'downloadSpeedLimit',
+      'clipboardDetectionEnabled',
+      'previewEnabled'
+    ];
     const sanitized = {};
     for (const key of allowedKeys) {
       if (Object.prototype.hasOwnProperty.call(partial ?? {}, key)) {
@@ -70,6 +97,18 @@ export function registerIpcHandlers(mainWindow) {
     }
     if (sanitized.filenameTemplate !== undefined && !Object.values(FILENAME_TEMPLATES).includes(sanitized.filenameTemplate)) {
       delete sanitized.filenameTemplate;
+    }
+    if (sanitized.qualityMode !== undefined && !VALID_QUALITY_MODES.includes(sanitized.qualityMode)) {
+      delete sanitized.qualityMode;
+    }
+    if (sanitized.downloadSpeedLimit !== undefined && !isValidSpeedLimit(sanitized.downloadSpeedLimit)) {
+      delete sanitized.downloadSpeedLimit;
+    }
+    if (sanitized.clipboardDetectionEnabled !== undefined) {
+      sanitized.clipboardDetectionEnabled = Boolean(sanitized.clipboardDetectionEnabled);
+    }
+    if (sanitized.previewEnabled !== undefined) {
+      sanitized.previewEnabled = Boolean(sanitized.previewEnabled);
     }
     return settings.save(sanitized);
   });
@@ -111,18 +150,21 @@ export function registerIpcHandlers(mainWindow) {
 
   ipcMain.handle('queue:add', (_event, payload) => {
     try {
+      const downloadSpeedLimit = isValidSpeedLimit(payload?.downloadSpeedLimit) ? payload.downloadSpeedLimit : null;
       const item = queue.add({
         url: payload?.url,
         outputDir: payload?.outputDir,
         quality: payload?.quality,
         format: payload?.format,
-        filenameTemplate: payload?.filenameTemplate
+        filenameTemplate: payload?.filenameTemplate,
+        downloadSpeedLimit
       });
       settings.save({
         downloadDir: item.outputDir,
         quality: item.quality,
         format: item.format,
-        filenameTemplate: item.filenameTemplate
+        filenameTemplate: item.filenameTemplate,
+        downloadSpeedLimit: item.downloadSpeedLimit
       });
       return item;
     } catch (err) {
@@ -131,13 +173,13 @@ export function registerIpcHandlers(mainWindow) {
     }
   });
 
-  ipcMain.handle('formats:probe', async (_event, url) => {
+  ipcMain.handle('media:analyze', async (_event, url) => {
     const ytDlpPath = getYtDlpPath();
     if (!binaryExists(ytDlpPath)) {
       throw new Error('errors.ytDlpMissing');
     }
     try {
-      return await probeFormats(url, ytDlpPath);
+      return await analyzeUrl(url, ytDlpPath);
     } catch (err) {
       if (err instanceof ValidationError) throw err;
       throw err instanceof Error ? err : new Error('errors.network');

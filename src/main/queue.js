@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { DownloadJob, validateUrl, validateOutputDir, resolveFilenameTemplate } from './downloader.js';
+import { isValidSpeedLimit } from './settings.js';
 
 const TERMINAL_STATUSES = new Set(['finished', 'error', 'cancelled']);
 
@@ -27,7 +28,7 @@ export class QueueManager {
     this.onEvent('queue:item-updated', { ...item });
   }
 
-  add({ url, outputDir, quality, format, filenameTemplate }) {
+  add({ url, outputDir, quality, format, filenameTemplate, downloadSpeedLimit }) {
     // Validation errors throw synchronously and never reach the queue —
     // the caller (ipc.js) surfaces them as an immediate rejection.
     const cleanUrl = validateUrl(url);
@@ -40,6 +41,7 @@ export class QueueManager {
       quality: typeof quality === 'string' ? quality : 'best',
       format: typeof format === 'string' ? format : 'mp4',
       filenameTemplate: resolveFilenameTemplate(filenameTemplate),
+      downloadSpeedLimit: isValidSpeedLimit(downloadSpeedLimit) ? downloadSpeedLimit : null,
       status: 'queued',
       percent: 0,
       downloadedBytes: null,
@@ -128,6 +130,7 @@ export class QueueManager {
       quality: item.quality,
       format: item.format,
       filenameTemplate: item.filenameTemplate,
+      downloadSpeedLimit: item.downloadSpeedLimit,
       ytDlpPath,
       ffmpegPath
     });

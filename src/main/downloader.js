@@ -2,7 +2,10 @@ import { spawn, exec } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { FILENAME_TEMPLATES } from './settings.js';
+import { FILENAME_TEMPLATES, isValidSpeedLimit } from './settings.js';
+import { classifyError } from './errorClassifier.js';
+
+export { classifyError };
 
 // Unique markers so we can pick our structured progress/print lines out of
 // yt-dlp's normal chatter on stdout without ambiguity.
@@ -94,9 +97,9 @@ function buildFormatArgs(quality, format) {
   return args;
 }
 
-export function buildArgs({ url, outputDir, quality, format, ffmpegPath, filenameTemplate }) {
+export function buildArgs({ url, outputDir, quality, format, ffmpegPath, filenameTemplate, downloadSpeedLimit }) {
   const outputTemplate = path.join(outputDir, resolveFilenameTemplate(filenameTemplate));
-  return [
+  const args = [
     url,
     '--newline',
     '--no-color',
@@ -112,37 +115,12 @@ export function buildArgs({ url, outputDir, quality, format, ffmpegPath, filenam
     `after_move:${MARKER_FILEPATH}${SEP}%(filepath)s`,
     ...buildFormatArgs(quality, format)
   ];
-}
-
-export function classifyError(stderrText, exitCode) {
-  const text = stderrText || '';
-  const patterns = [
-    [/no space left on device|enospc/i, 'errors.noSpace'],
-    [/permission denied|eacces|eperm/i, 'errors.permissionDenied'],
-    [/sign in to confirm|sign in if you|age[- ]restricted/i, 'errors.ageRestricted'],
-    [/members-only|join this channel|available to this channel/i, 'errors.membersOnly'],
-    [/premieres in|will begin in|live event will begin/i, 'errors.notYetAvailable'],
-    [/video unavailable|this video is not available|has been removed|private video/i, 'errors.videoUnavailable'],
-    [/http error 403|forbidden/i, 'errors.expiredLink'],
-    [/http error 404/i, 'errors.notFound'],
-    [/unsupported url/i, 'errors.unsupportedUrl'],
-    [/unable to download webpage|getaddrinfo|enotfound|econnrefused|econnreset|network is unreachable|timed out/i, 'errors.network'],
-    [/ffmpeg not found|ffprobe not found/i, 'errors.ffmpegMissing'],
-    [/ffmpeg\.exe.*not found|yt-dlp\.exe.*not found/i, 'errors.componentMissing'],
-    [/could not write to output file|no such file or directory/i, 'errors.writeFailed']
-  ];
-  for (const [regex, key] of patterns) {
-    if (regex.test(text)) return key;
+  // Validated against a strict digits+K/M/G pattern (see isValidSpeedLimit)
+  // before ever reaching here, so this can never inject extra flags.
+  if (isValidSpeedLimit(downloadSpeedLimit) && downloadSpeedLimit) {
+    args.push('--limit-rate', downloadSpeedLimit);
   }
-  // Last resort: yt-dlp's own (English) error line, or a bare exit-code
-  // message. Neither matches a translation key, so the renderer shows it
-  // verbatim rather than translating it.
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const lastError = [...lines].reverse().find((l) => /^error/i.test(l));
-  if (lastError) {
-    return lastError.replace(/^ERROR:\s*/i, '');
-  }
-  return `Download failed unexpectedly (exit code ${exitCode}).`;
+  return args;
 }
 
 function parseNumeric(value) {
@@ -152,13 +130,14 @@ function parseNumeric(value) {
 }
 
 export class DownloadJob {
-  constructor({ url, outputDir, quality, format, filenameTemplate, ytDlpPath, ffmpegPath }) {
+  constructor({ url, outputDir, quality, format, filenameTemplate, downloadSpeedLimit, ytDlpPath, ffmpegPath }) {
     this.id = crypto.randomUUID();
     this.url = url;
     this.outputDir = outputDir;
     this.quality = quality;
     this.format = format;
     this.filenameTemplate = filenameTemplate;
+    this.downloadSpeedLimit = downloadSpeedLimit;
     this.ytDlpPath = ytDlpPath;
     this.ffmpegPath = ffmpegPath;
     this.cancelled = false;
@@ -174,6 +153,7 @@ export class DownloadJob {
       quality: this.quality,
       format: this.format,
       filenameTemplate: this.filenameTemplate,
+      downloadSpeedLimit: this.downloadSpeedLimit,
       ffmpegPath: this.ffmpegPath
     });
 
@@ -181,7 +161,14 @@ export class DownloadJob {
     try {
       child = spawn(this.ytDlpPath, args, {
         windowsHide: true,
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'pipe', 'pipe'],
+        // yt-dlp's --progress-template hook (unlike its default progress bar)
+        // doesn't flush stdout per update, so under Node's non-tty pipe its
+        // output gets fully block-buffered by Python and only appears in one
+        // burst right before the process exits — the UI would sit at
+        // "Starting…" with no progress for the whole download. Forcing
+        // unbuffered mode makes every update arrive as it's written.
+        env: { ...process.env, PYTHONUNBUFFERED: '1' }
       });
     } catch (err) {
       onError('errors.startFailed');
@@ -190,12 +177,50 @@ export class DownloadJob {
     this.child = child;
 
     let stdoutTail = '';
+    let sawStdoutProgress = false;
     child.stdout.on('data', (chunk) => {
+      sawStdoutProgress = true;
       stdoutTail += chunk.toString('utf-8');
       const lines = stdoutTail.split(/\r?\n/);
       stdoutTail = lines.pop() ?? '';
       for (const line of lines) this._handleStdoutLine(line, { onProgress, onStatus });
     });
+
+    // yt-dlp's --progress-template hook writes to stdout without an explicit
+    // flush, and under some Electron/Windows main-process configurations that
+    // output only surfaces as one burst right as the process exits — the UI
+    // would sit at "Starting…" with zero feedback for the whole download.
+    // As a robust fallback that doesn't depend on yt-dlp's stdout timing at
+    // all, watch the growing .part file on disk directly. If real stdout
+    // progress does arrive, it simply overwrites these numbers with more
+    // precise ones (percent/eta), so this never fights the primary path.
+    let lastPollBytes = 0;
+    let lastPollTime = Date.now();
+    const pollTimer = setInterval(() => {
+      if (sawStdoutProgress) return;
+      fs.readdir(this.outputDir, (err, files) => {
+        if (err || this.cancelled) return;
+        let best = null;
+        for (const name of files) {
+          if (!name.endsWith('.part')) continue;
+          const full = path.join(this.outputDir, name);
+          try {
+            const st = fs.statSync(full);
+            if (!best || st.mtimeMs > best.mtimeMs) best = { size: st.size, mtimeMs: st.mtimeMs };
+          } catch {
+            /* file may have been renamed/removed between readdir and stat */
+          }
+        }
+        if (!best) return;
+        const now = Date.now();
+        const elapsedSec = (now - lastPollTime) / 1000;
+        const speed = elapsedSec > 0 && lastPollBytes > 0 ? Math.max(0, (best.size - lastPollBytes) / elapsedSec) : null;
+        lastPollBytes = best.size;
+        lastPollTime = now;
+        onProgress({ status: 'downloading', downloadedBytes: best.size, totalBytes: null, speedBytesPerSec: speed, etaSeconds: null });
+      });
+    }, 750);
+    child.once('close', () => clearInterval(pollTimer));
 
     child.stderr.on('data', (chunk) => {
       const text = chunk.toString('utf-8');

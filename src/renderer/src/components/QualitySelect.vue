@@ -19,10 +19,11 @@ const staticOptions = computed(() => [
   { value: '360', label: t('form.quality.p360') }
 ]);
 
-// When we've successfully probed a YouTube URL's real formats, show only
-// the resolutions that video actually has instead of the generic preset
-// list — direct-video/HLS URLs never populate this, so they always fall
-// through to staticOptions, unchanged.
+// Once a URL has been successfully analyzed, show only the resolutions
+// that specific video actually has instead of the generic preset list —
+// un-analyzed or analysis-failed URLs always fall through to
+// staticOptions, unchanged (including direct-video/HLS, which are usually
+// single-resolution anyway).
 const options = computed(() => {
   const heights = store.probedHeights;
   if (!heights || heights.length === 0) return staticOptions.value;
@@ -40,9 +41,9 @@ const options = computed(() => {
       id="quality-select"
       v-model="model"
       class="select-input"
-      :disabled="disabled || store.isProbingFormats"
+      :disabled="disabled || store.isAnalyzing"
     >
-      <option v-if="store.isProbingFormats" value="best">{{ t('youtube.fetchingFormats') }}</option>
+      <option v-if="store.isAnalyzing" value="best">{{ t('analysis.analyzing') }}</option>
       <option v-for="opt in options" v-else :key="opt.value" :value="opt.value">{{ opt.label }}</option>
     </select>
   </div>
