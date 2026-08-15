@@ -7,6 +7,7 @@ Built with Electron, Vue 3, Pinia, and Vite. yt-dlp and FFmpeg do the actual dow
 ## Features
 
 - Paste a video or HLS (`.m3u8`) URL, pick quality (best down to 360p) and format (MP4/MKV/WEBM/MP3)
+- **YouTube-aware quality detection** — pasting a YouTube URL automatically fetches that specific video's real available resolutions and replaces the generic quality list with them; every other URL keeps the generic list, unchanged
 - **Download queue** — add multiple videos, they process one at a time; cancel or remove any item; open the containing folder when done
 - Live per-item progress: percent, speed, ETA, status
 - Native folder picker, with the last-used folder remembered across launches
@@ -77,7 +78,7 @@ Whatever is in `resources/binaries/` at build time gets copied next to the packa
 
 ## Usage
 
-1. Paste a URL, choose where to save it, pick quality/format.
+1. Paste a URL, choose where to save it, pick quality/format. If it's a YouTube URL, the quality list automatically updates to that video's real available resolutions once fetched (shown by a status line under the format row).
 2. Click **Add to Queue**. Repeat for as many videos as you like — they queue up and download one at a time.
 3. Watch progress in the **Queue** tab of the sidebar. Cancel a queued or in-progress item, remove a finished/errored one, or open its folder.
 4. Switch to the **Settings** tab — **General** for folder/quality/format/filename/language, **Appearance** for the theme picker, **Info** for versions, update checks, and support links.
@@ -158,6 +159,16 @@ Only **one yt-dlp process runs at a time** (kinder to bandwidth/CPU, keeps the c
 
 The renderer's *only* write path for queue item state is these events — the `queue:add` IPC call's return value is not used to mutate state (that raced with the event on initial add, producing duplicate rows; see the comment in `queue.js`).
 
+### YouTube format detection
+
+`src/renderer/src/utils/youtube.js`'s `isYouTubeUrl()` is a client-side hint only — it decides whether to trigger probing, nothing more. Typing/pasting into the URL field is watched (debounced 600ms) in `App.vue`; when the URL looks like YouTube, the store calls `window.api.probeFormats(url)` → `ipcMain.handle('formats:probe', ...)` → `probeFormats()` in `src/main/formats.js`, which runs `yt-dlp -J <url>` (metadata only — nothing is downloaded) and extracts the distinct video heights actually available for that specific video from the returned format list.
+
+`QualitySelect.vue` swaps in those real heights in place of the generic preset list (best/2160/1440/1080/720/480/360) while a probe is `ready`; every other URL — direct files, `.m3u8`, or a YouTube probe that hasn't resolved yet — keeps the generic list untouched. Selecting a probed height (which can be any real value, e.g. 144p, not just the presets) flows through the exact same `--merge-output-format`/height-filter download pipeline as before; `resolveHeight()` in `downloader.js` was generalized from a fixed lookup table to parsing any numeric height so this needed no new download logic.
+
+**No DRM/auth/paywall bypass:** `probeFormats()` passes no cookies, credentials, proxy, or geo-bypass flags — it only ever sees what yt-dlp can extract anonymously and publicly, identically to a real download attempt. Members-only, private, age-restricted, or otherwise inaccessible videos fail the probe the same way they'd fail a download, and are classified through the same `classifyError()` used for downloads (now with added patterns for members-only content and not-yet-available premieres/live streams) — surfaced as a clear, translated message in place of the quality list rather than a raw yt-dlp error.
+
+A URL change always resets the selected quality back to `best` (`scheduleFormatProbe()` in `stores/queue.js`) — carrying over a specific height like 144p from a previous YouTube video into a new URL that doesn't have that resolution caused real download failures ("Requested format is not available") during testing.
+
 ### Theme
 
 Six themes live as CSS custom-property sets in `style.css`, each under a `:root[data-theme='name']` selector. Dark is the default and defined on the bare `:root` (not behind an attribute) so the very first paint — before Vue mounts and applies the persisted theme — is already correct and never flashes light. Each theme also maps to a native light/dark equivalent (`THEME_NATIVE_SOURCE` in `src/main/settings.js`) applied to Electron's `nativeTheme.themeSource`, so native dialogs (the folder picker) stay visually consistent even for themes like Cyberpunk that have no native counterpart.
@@ -184,6 +195,6 @@ Main-process error messages work differently: `downloader.js`'s `ValidationError
 
 ## Roadmap
 
-Implemented: queueing, per-item progress/cancel/remove, General/Appearance/Info settings, six themes, English/French/Dutch UI, customizable filename templates, yt-dlp self-update, and update checks against GitHub Releases.
+Implemented: queueing, per-item progress/cancel/remove, YouTube-specific format detection, General/Appearance/Info settings, six themes, English/French/Dutch UI, customizable filename templates, yt-dlp self-update, and update checks against GitHub Releases.
 
 Not implemented yet: persisting the queue across app restarts, concurrent (parallel) downloads, in-app auto-update (the "Check for updates" button links out to the release rather than downloading it), and languages beyond English/French/Dutch.

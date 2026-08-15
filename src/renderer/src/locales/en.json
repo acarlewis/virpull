@@ -19,6 +19,10 @@
     "prefix": "Missing components:",
     "suffix": "not found. See Settings for details."
   },
+  "youtube": {
+    "fetchingFormats": "Fetching available qualities…",
+    "qualitiesFound": "{count} quality options found for this video"
+  },
   "queue": {
     "tabLabel": "Queue",
     "empty": {
@@ -106,6 +110,8 @@
     "noSpace": "Not enough disk space to complete the download.",
     "permissionDenied": "Permission denied. Choose a different download folder and try again.",
     "ageRestricted": "This video requires sign-in or is age-restricted and cannot be downloaded.",
+    "membersOnly": "This video is restricted to channel members and cannot be downloaded.",
+    "notYetAvailable": "This video is not yet available (an upcoming premiere or live stream).",
     "videoUnavailable": "This video is unavailable. It may have been removed or made private.",
     "expiredLink": "Download link has expired. Please obtain a fresh video URL and try again.",
     "notFound": "The video could not be found at that URL.",

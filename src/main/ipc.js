@@ -1,6 +1,7 @@
 import { ipcMain, dialog, shell, app, BrowserWindow, nativeTheme } from 'electron';
 import { execFile } from 'node:child_process';
 import { ValidationError } from './downloader.js';
+import { probeFormats } from './formats.js';
 import { QueueManager } from './queue.js';
 import { getYtDlpPath, getFfmpegPath, binaryExists, getDefaultDownloadsDir } from './paths.js';
 import * as settings from './settings.js';
@@ -127,6 +128,19 @@ export function registerIpcHandlers(mainWindow) {
     } catch (err) {
       if (err instanceof ValidationError) throw err;
       throw new Error('errors.invalidRequest');
+    }
+  });
+
+  ipcMain.handle('formats:probe', async (_event, url) => {
+    const ytDlpPath = getYtDlpPath();
+    if (!binaryExists(ytDlpPath)) {
+      throw new Error('errors.ytDlpMissing');
+    }
+    try {
+      return await probeFormats(url, ytDlpPath);
+    } catch (err) {
+      if (err instanceof ValidationError) throw err;
+      throw err instanceof Error ? err : new Error('errors.network');
     }
   });
 

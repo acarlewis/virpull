@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia';
 import { i18n, translateMessage, translateIpcError } from '../i18n';
+import { isYouTubeUrl } from '../utils/youtube';
+
+const PROBE_DEBOUNCE_MS = 600;
+// Not store state — a plain debounce handle doesn't need to be reactive,
+// and there's only ever one store instance.
+let probeTimer = null;
 
 export const useQueueStore = defineStore('queue', {
   state: () => ({
@@ -11,6 +17,14 @@ export const useQueueStore = defineStore('queue', {
     quality: 'best',
     format: 'mp4',
     formError: '',
+
+    // YouTube format probing (see scheduleFormatProbe)
+    youtubeProbe: {
+      status: 'idle', // 'idle' | 'loading' | 'ready' | 'error'
+      heights: [],
+      title: null,
+      errorMessage: ''
+    },
 
     // Preferences
     autoOpenFolder: true,
@@ -34,7 +48,9 @@ export const useQueueStore = defineStore('queue', {
 
   getters: {
     binariesReady: (state) => state.binaries.ytDlp.available && state.binaries.ffmpeg.available,
-    activeCount: (state) => state.queue.filter((i) => !['finished', 'error', 'cancelled'].includes(i.status)).length
+    activeCount: (state) => state.queue.filter((i) => !['finished', 'error', 'cancelled'].includes(i.status)).length,
+    isProbingFormats: (state) => state.youtubeProbe.status === 'loading',
+    probedHeights: (state) => (state.youtubeProbe.status === 'ready' ? state.youtubeProbe.heights : null)
   },
 
   actions: {
@@ -122,6 +138,55 @@ export const useQueueStore = defineStore('queue', {
     async setFilenameTemplate(template) {
       this.filenameTemplate = template;
       await window.api.updateSettings({ filenameTemplate: template });
+    },
+
+    // Called (debounced) whenever the URL field changes. Only YouTube URLs
+    // trigger a probe — direct-video/HLS URLs keep using the fixed generic
+    // quality list, unchanged.
+    scheduleFormatProbe() {
+      clearTimeout(probeTimer);
+      const url = this.url.trim();
+      // A previously-probed quality (e.g. 144p, picked for one YouTube
+      // video) can be invalid for whatever the URL just changed to — a
+      // different video with fewer resolutions, or a direct file that only
+      // has one. 'best' is always valid, so reset on every URL change
+      // rather than trying to carry a selection across contexts.
+      this.quality = 'best';
+      if (!isYouTubeUrl(url)) {
+        this.youtubeProbe = { status: 'idle', heights: [], title: null, errorMessage: '' };
+        return;
+      }
+      this.youtubeProbe = { status: 'loading', heights: [], title: null, errorMessage: '' };
+      probeTimer = setTimeout(() => this._runFormatProbe(url), PROBE_DEBOUNCE_MS);
+    },
+
+    async _runFormatProbe(url) {
+      // The URL field may have changed again while we were debouncing/
+      // waiting on yt-dlp; ignore stale results for a URL that's no longer
+      // current rather than clobbering newer state with an old response.
+      if (this.url.trim() !== url) return;
+      try {
+        const result = await window.api.probeFormats(url);
+        if (this.url.trim() !== url) return;
+        this.youtubeProbe = {
+          status: 'ready',
+          heights: result.heights || [],
+          title: result.title,
+          errorMessage: ''
+        };
+        const validValues = ['best', ...this.youtubeProbe.heights.map(String)];
+        if (!validValues.includes(this.quality)) {
+          this.quality = 'best';
+        }
+      } catch (err) {
+        if (this.url.trim() !== url) return;
+        this.youtubeProbe = {
+          status: 'error',
+          heights: [],
+          title: null,
+          errorMessage: translateIpcError(err, 'errors.network')
+        };
+      }
     },
 
     async addToQueue() {
