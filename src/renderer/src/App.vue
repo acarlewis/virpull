@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQueueStore } from './stores/queue';
 import UrlInput from './components/UrlInput.vue';
@@ -19,6 +19,13 @@ onMounted(() => {
 onUnmounted(() => {
   store.unsubscribers.forEach((unsub) => unsub());
 });
+
+// Detects YouTube URLs automatically and probes real available formats;
+// direct-video/HLS URLs never match and keep using the static quality list.
+watch(
+  () => store.url,
+  () => store.scheduleFormatProbe()
+);
 
 function openAppearance() {
   store.setSidebarView('settings');
@@ -65,6 +72,16 @@ function openAppearance() {
         <div class="row-2">
           <QualitySelect v-model="store.quality" />
           <FormatSelect v-model="store.format" />
+        </div>
+
+        <div v-if="store.youtubeProbe.status === 'loading'" class="youtube-status loading">
+          {{ t('youtube.fetchingFormats') }}
+        </div>
+        <div v-else-if="store.youtubeProbe.status === 'error'" class="youtube-status error">
+          {{ store.youtubeProbe.errorMessage }}
+        </div>
+        <div v-else-if="store.probedHeights && store.probedHeights.length" class="youtube-status ready">
+          {{ t('youtube.qualitiesFound', { count: store.probedHeights.length }) }}
         </div>
 
         <div class="actions">
@@ -185,6 +202,19 @@ function openAppearance() {
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.youtube-status {
+  font-size: 12.5px;
+  margin-top: -8px;
+}
+.youtube-status.loading {
+  color: var(--text-muted);
+}
+.youtube-status.error {
+  color: var(--danger);
+}
+.youtube-status.ready {
+  color: var(--success);
 }
 .binaries-warning {
   padding: 10px 12px;

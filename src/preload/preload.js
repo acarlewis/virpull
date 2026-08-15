@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
 
   checkBinaries: () => ipcRenderer.invoke('binaries:check'),
   updateYtDlp: () => ipcRenderer.invoke('binaries:update-ytdlp'),
+  probeFormats: (url) => ipcRenderer.invoke('formats:probe', url),
 
   addToQueue: (options) => ipcRenderer.invoke('queue:add', options),
   cancelQueueItem: (id) => ipcRenderer.invoke('queue:cancel', id),

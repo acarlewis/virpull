@@ -19,6 +19,10 @@
     "prefix": "Composants manquants :",
     "suffix": "introuvable(s). Voir les paramètres pour plus de détails."
   },
+  "youtube": {
+    "fetchingFormats": "Récupération des qualités disponibles…",
+    "qualitiesFound": "{count} qualités disponibles pour cette vidéo"
+  },
   "queue": {
     "tabLabel": "File d'attente",
     "empty": {
@@ -106,6 +110,8 @@
     "noSpace": "Espace disque insuffisant pour terminer le téléchargement.",
     "permissionDenied": "Accès refusé. Choisissez un autre dossier de téléchargement et réessayez.",
     "ageRestricted": "Cette vidéo nécessite une connexion ou est soumise à une restriction d'âge et ne peut pas être téléchargée.",
+    "membersOnly": "Cette vidéo est réservée aux membres de la chaîne et ne peut pas être téléchargée.",
+    "notYetAvailable": "Cette vidéo n'est pas encore disponible (avant-première ou diffusion en direct à venir).",
     "videoUnavailable": "Cette vidéo n'est pas disponible. Elle a peut-être été supprimée ou rendue privée.",
     "expiredLink": "Le lien de téléchargement a expiré. Veuillez obtenir une nouvelle URL vidéo et réessayer.",
     "notFound": "La vidéo est introuvable à cette URL.",

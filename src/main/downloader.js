@@ -10,16 +10,6 @@ const SEP = '';
 const MARKER_PROGRESS = 'YTDLP-PROGRESS';
 const MARKER_FILEPATH = 'YTDLP-FILEPATH';
 
-const QUALITY_HEIGHTS = {
-  best: null,
-  '2160': 2160,
-  '1440': 1440,
-  '1080': 1080,
-  '720': 720,
-  '480': 480,
-  '360': 360
-};
-
 const VIDEO_FORMATS = new Set(['mp4', 'mkv', 'webm']);
 const AUDIO_FORMATS = new Set(['mp3']);
 
@@ -75,11 +65,21 @@ export function resolveFilenameTemplate(template) {
   return Object.values(FILENAME_TEMPLATES).includes(template) ? template : FILENAME_TEMPLATES.default;
 }
 
+// 'best' (or anything non-numeric) means no height filter. Any other value
+// is coerced through Number() — this deliberately accepts arbitrary real
+// heights (144, 720, 4320, ...) reported by format probing, not just the
+// fixed preset list, while staying injection-safe: a malicious/garbled
+// string just coerces to NaN and falls back to no filter rather than being
+// interpolated as-is.
+function resolveHeight(quality) {
+  if (!quality || quality === 'best') return null;
+  const height = Number(quality);
+  return Number.isFinite(height) && height > 0 ? height : null;
+}
+
 function buildFormatArgs(quality, format) {
   const args = [];
-  const height = Object.prototype.hasOwnProperty.call(QUALITY_HEIGHTS, quality)
-    ? QUALITY_HEIGHTS[quality]
-    : null;
+  const height = resolveHeight(quality);
 
   if (AUDIO_FORMATS.has(format)) {
     args.push('-f', 'bestaudio/best');
@@ -114,13 +114,15 @@ export function buildArgs({ url, outputDir, quality, format, ffmpegPath, filenam
   ];
 }
 
-function classifyError(stderrText, exitCode) {
+export function classifyError(stderrText, exitCode) {
   const text = stderrText || '';
   const patterns = [
     [/no space left on device|enospc/i, 'errors.noSpace'],
     [/permission denied|eacces|eperm/i, 'errors.permissionDenied'],
-    [/sign in to confirm|age[- ]restricted/i, 'errors.ageRestricted'],
-    [/video unavailable|this video is not available|has been removed/i, 'errors.videoUnavailable'],
+    [/sign in to confirm|sign in if you|age[- ]restricted/i, 'errors.ageRestricted'],
+    [/members-only|join this channel|available to this channel/i, 'errors.membersOnly'],
+    [/premieres in|will begin in|live event will begin/i, 'errors.notYetAvailable'],
+    [/video unavailable|this video is not available|has been removed|private video/i, 'errors.videoUnavailable'],
     [/http error 403|forbidden/i, 'errors.expiredLink'],
     [/http error 404/i, 'errors.notFound'],
     [/unsupported url/i, 'errors.unsupportedUrl'],

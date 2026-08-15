@@ -19,6 +19,10 @@
     "prefix": "Ontbrekende onderdelen:",
     "suffix": "niet gevonden. Zie Instellingen voor meer details."
   },
+  "youtube": {
+    "fetchingFormats": "Beschikbare kwaliteiten ophalen…",
+    "qualitiesFound": "{count} kwaliteitsopties gevonden voor deze video"
+  },
   "queue": {
     "tabLabel": "Wachtrij",
     "empty": {
@@ -106,6 +110,8 @@
     "noSpace": "Onvoldoende schijfruimte om de download te voltooien.",
     "permissionDenied": "Toegang geweigerd. Kies een andere downloadmap en probeer het opnieuw.",
     "ageRestricted": "Deze video vereist inloggen of heeft een leeftijdsbeperking en kan niet worden gedownload.",
+    "membersOnly": "Deze video is voorbehouden aan kanaalleden en kan niet worden gedownload.",
+    "notYetAvailable": "Deze video is nog niet beschikbaar (aankomende premiere of livestream).",
     "videoUnavailable": "Deze video is niet beschikbaar. Mogelijk is deze verwijderd of privé gemaakt.",
     "expiredLink": "De downloadlink is verlopen. Verkrijg een nieuwe video-URL en probeer het opnieuw.",
     "notFound": "De video kon niet worden gevonden op die URL.",

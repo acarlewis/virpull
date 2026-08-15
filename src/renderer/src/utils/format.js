@@ -31,6 +31,13 @@ export function formatPercent(percent) {
   return Math.min(100, Math.max(0, Math.round(percent)));
 }
 
+const HEIGHT_QUALIFIERS = { 4320: '8K', 2160: '4K', 1440: '2K' };
+
+export function formatHeightLabel(height) {
+  const qualifier = HEIGHT_QUALIFIERS[height];
+  return qualifier ? `${height}p (${qualifier})` : `${height}p`;
+}
+
 const ACTIVE_STATUSES = new Set([
   'starting',
   'fetching-info',
