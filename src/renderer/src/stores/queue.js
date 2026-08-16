@@ -102,6 +102,7 @@ export const useQueueStore = defineStore('queue', {
       this.queue = queueState;
       this._subscribe();
       this.ready = true;
+      window.api.notifyReady();
     },
 
     _subscribe() {

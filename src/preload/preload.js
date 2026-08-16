@@ -34,5 +34,10 @@ contextBridge.exposeInMainWorld('api', {
 
   getAppVersion: () => ipcRenderer.invoke('app:get-version'),
   checkForUpdate: () => ipcRenderer.invoke('app:check-for-update'),
-  openExternal: (url) => ipcRenderer.invoke('app:open-external', url)
+  openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
+
+  // Tells the main process the app has actually mounted and loaded its
+  // initial data — this is what the splash screen waits on to know when
+  // it's safe to hand off to the main window. See stores/queue.js's init().
+  notifyReady: () => ipcRenderer.send('app:renderer-ready')
 });

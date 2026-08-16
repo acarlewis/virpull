@@ -45,12 +45,21 @@ module.exports = {
           entry: 'src/preload/preload.js',
           config: 'vite.preload.config.mjs',
           target: 'preload'
+        },
+        {
+          entry: 'src/preload/splash-preload.js',
+          config: 'vite.splash-preload.config.mjs',
+          target: 'preload'
         }
       ],
       renderer: [
         {
           name: 'main_window',
           config: 'vite.renderer.config.mjs'
+        },
+        {
+          name: 'splash_window',
+          config: 'vite.splash.config.mjs'
         }
       ]
     }),

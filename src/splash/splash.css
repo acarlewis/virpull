@@ -1,0 +1,306 @@
+/* Isolated palette for the splash — intentionally not shared with the main
+   app's style.css (which defines six user-selectable themes that aren't
+   resolved yet at this point in startup). Values are pulled from VirPull's
+   actual brand: --cyan/--navy are sampled from logo.png, --accent/--bg match
+   the app's own default (dark) theme so the transition into the main window
+   never has to jump palettes. */
+:root {
+  --bg-deep: #0b0d13;
+  --bg: #14161f;
+  --surface: #1c1e26;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #edeef2;
+  --text-muted: #838a9c;
+  --cyan: #00adef;
+  --navy: #1d55a8;
+  --accent: #6d87ff;
+  --danger: #ff6b61;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 50% -10%, var(--bg) 0%, var(--bg-deep) 60%, var(--bg-deep) 100%);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  -webkit-app-region: drag;
+}
+
+.glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 32% at 28% 18%, rgba(0, 173, 239, 0.16) 0%, transparent 70%),
+    radial-gradient(42% 36% at 76% 82%, rgba(29, 85, 168, 0.18) 0%, transparent 70%);
+}
+
+.content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 30px 32px 26px;
+  -webkit-app-region: no-drag;
+}
+/* `.content`'s `display: flex` and the UA stylesheet's `[hidden] { display:
+   none }` have equal specificity, and author styles win ties over UA
+   defaults — so plain `.content` would silently defeat the `hidden`
+   attribute. This rule out-specifies it so hidden actually hides. */
+.content[hidden] {
+  display: none;
+}
+
+/* ---------- Stage 1: mark entrance ---------- */
+.mark {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  opacity: 0;
+  transform: scale(0.94) translateY(2px);
+  animation: mark-in 620ms cubic-bezier(0.16, 1, 0.3, 1) 60ms forwards;
+}
+.logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(0, 173, 239, 0.25));
+}
+
+.wordmark {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--text);
+  opacity: 0;
+  animation: fade-up 560ms cubic-bezier(0.16, 1, 0.3, 1) 160ms forwards;
+}
+
+.tagline {
+  margin: 5px 0 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  letter-spacing: 0.2px;
+  opacity: 0;
+  animation: fade-up 560ms cubic-bezier(0.16, 1, 0.3, 1) 240ms forwards;
+}
+
+/* ---------- Stage 2: video -> processing -> download stream ---------- */
+.stream {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 26px;
+  color: var(--text-muted);
+  opacity: 0;
+  animation: fade-up 560ms cubic-bezier(0.16, 1, 0.3, 1) 340ms forwards;
+}
+.stream-icon {
+  flex-shrink: 0;
+  color: var(--cyan);
+  opacity: 0.85;
+}
+.stream-icon:last-child {
+  color: var(--accent);
+}
+.stream-track {
+  position: relative;
+  width: 84px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+}
+.stream-track::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--cyan), var(--accent));
+  opacity: 0.18;
+  transform: translateY(-50%);
+}
+.dot {
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 6px 1px rgba(0, 173, 239, 0.55);
+  transform: translate(0, -50%);
+  animation: flow 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.dot:nth-child(2) {
+  animation-delay: 0.45s;
+  background: var(--accent);
+  box-shadow: 0 0 6px 1px rgba(109, 135, 255, 0.55);
+}
+.dot:nth-child(3) {
+  animation-delay: 0.9s;
+}
+.dot:nth-child(4) {
+  animation-delay: 1.35s;
+  background: var(--accent);
+  box-shadow: 0 0 6px 1px rgba(109, 135, 255, 0.55);
+}
+
+/* ---------- Stage 3: status ---------- */
+.status {
+  margin: 22px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  min-height: 16px;
+  opacity: 0;
+  animation: fade-up 560ms cubic-bezier(0.16, 1, 0.3, 1) 420ms forwards;
+  transition: opacity 180ms ease;
+}
+.status.swapping {
+  opacity: 0;
+}
+
+@keyframes mark-in {
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes flow {
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+/* ---------- Error state ---------- */
+.error-content {
+  gap: 4px;
+}
+.error-icon {
+  color: var(--danger);
+  margin-bottom: 10px;
+}
+.error-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.error-message {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-width: 300px;
+}
+.error-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+.btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .mark,
+  .wordmark,
+  .tagline,
+  .stream,
+  .status {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .dot {
+    animation: none !important;
+    opacity: 0.55 !important;
+    left: var(--static-pos, 40%) !important;
+  }
+  .dot:nth-child(1) {
+    --static-pos: 5%;
+  }
+  .dot:nth-child(2) {
+    --static-pos: 35%;
+  }
+  .dot:nth-child(3) {
+    --static-pos: 65%;
+  }
+  .dot:nth-child(4) {
+    --static-pos: 95%;
+  }
+}
+
+/* ---------- Splash -> main window transition ---------- */
+body.leaving .frame {
+  transition: opacity 220ms ease;
+  opacity: 0;
+}

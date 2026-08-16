@@ -146,6 +146,24 @@ body {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+/* The window itself is created hidden and only shown once this app has
+   mounted (see main.js's createMainWindow/startApp), so this fade only
+   smooths the instant between first paint and Vue attaching — it isn't
+   what the splash-to-main transition times itself against. */
+body {
+  opacity: 0;
+}
+body.app-ready {
+  opacity: 1;
+  transition: opacity 160ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  body {
+    opacity: 1;
+    transition: none;
+  }
+}
+
 #app {
   height: 100%;
 }
