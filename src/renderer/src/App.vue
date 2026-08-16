@@ -150,11 +150,28 @@ const resolvedQualityLabel = computed(() => {
   height: 100%;
 }
 .app-header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 16px 24px 12px;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.app-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url('/header-bg.gif');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.15;
+  z-index: 0;
+}
+
+.app-header > * {
+  position: relative;
+  z-index: 1;
 }
 .app-logo {
   width: 28px;
