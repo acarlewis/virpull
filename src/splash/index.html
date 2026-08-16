@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Splash is a fully isolated, static page — no remote content, no
+         renderer app code, nothing to script-inject. Locked down the same
+         way as the main window's CSP even though the attack surface here
+         is effectively zero. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VirPull</title>
+    <link rel="stylesheet" href="./splash.css" />
+  </head>
+  <body>
+    <div class="frame" data-region="drag">
+      <div class="glow"></div>
+
+      <main class="content" id="normal-state">
+        <div class="mark" id="mark">
+          <img src="./logo.png" alt="" class="logo" />
+        </div>
+
+        <h1 class="wordmark" id="wordmark">VIRPULL</h1>
+        <p class="tagline" id="tagline">Download. Simple.</p>
+
+        <div class="stream" id="stream" aria-hidden="true">
+          <svg class="stream-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          <span class="stream-track">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </span>
+          <svg class="stream-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+            <path d="M12 3v12.2l4.6-4.6L18 12l-6 6-6-6 1.4-1.4L12 15.2V3z" />
+          </svg>
+        </div>
+
+        <p class="status" id="status" role="status" aria-live="polite">Starting VirPull&hellip;</p>
+      </main>
+
+      <main class="content error-content" id="error-state" hidden>
+        <div class="error-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9.25" />
+            <path d="M12 7.5v5.5" />
+            <circle cx="12" cy="16.3" r="0.25" fill="currentColor" stroke="none" />
+          </svg>
+        </div>
+        <h2 class="error-title">Unable to start VirPull</h2>
+        <p class="error-message" id="error-message">Something went wrong while starting the application.</p>
+        <div class="error-actions">
+          <button type="button" class="btn btn-primary" id="retry-btn">Retry</button>
+          <button type="button" class="btn btn-secondary" id="close-btn">Close</button>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="./splash.js"></script>
+  </body>
+</html>
