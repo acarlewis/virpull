@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
-import { DownloadJob, validateUrl, validateOutputDir, resolveFilenameTemplate } from './downloader.js';
+import { DownloadJob, validateUrl, validateOutputDir, resolveFilenameTemplate, EXPIRED_LINK_KEY } from './downloader.js';
 import { isValidSpeedLimit } from './settings.js';
+import { devLog } from './devLog.js';
 
 const TERMINAL_STATUSES = new Set(['finished', 'error', 'cancelled']);
 
@@ -18,6 +19,9 @@ export class QueueManager {
     this.pendingIds = []; // FIFO of ids waiting to start
     this.currentJob = null;
     this.currentItemId = null;
+    // Item ids that have already had their one automatic retry after an
+    // EXPIRED_LINK_KEY failure (see _handleJobError) — never retried twice.
+    this.expiredRetryAttempted = new Set();
   }
 
   _findItem(id) {
@@ -73,6 +77,7 @@ export class QueueManager {
       this.currentJob = null;
       this.currentItemId = null;
       item.status = 'cancelled';
+      this.expiredRetryAttempted.delete(id);
       this._emitItemUpdate(item);
       this._processNext();
       return true;
@@ -82,6 +87,7 @@ export class QueueManager {
     if (pendingIndex !== -1) {
       this.pendingIds.splice(pendingIndex, 1);
       item.status = 'cancelled';
+      this.expiredRetryAttempted.delete(id);
       this._emitItemUpdate(item);
       return true;
     }
@@ -124,6 +130,14 @@ export class QueueManager {
       return;
     }
 
+    this._runJob(item, ytDlpPath, ffmpegPath);
+  }
+
+  // Spawns a DownloadJob for `item` and wires its callbacks. Split out from
+  // _processNext so the same start-a-job logic can be reused for the
+  // single automatic retry in _handleJobError — that retry restarts the
+  // *same* item in place, it doesn't go back through the pending FIFO.
+  _runJob(item, ytDlpPath, ffmpegPath) {
     const job = new DownloadJob({
       url: item.url,
       outputDir: item.outputDir,
@@ -137,6 +151,13 @@ export class QueueManager {
     this.currentJob = job;
     this.currentItemId = item.id;
     item.status = 'starting';
+    item.errorMessage = null;
+    // A restart (the expired-link auto-retry) re-downloads from scratch, so
+    // clear stale progress rather than resuming the bar mid-way — and reset
+    // the monotonic floor applied in onProgress below.
+    item.percent = 0;
+    item.downloadedBytes = null;
+    item.totalBytes = null;
     this._emitItemUpdate(item);
 
     let lastEmit = 0;
@@ -148,7 +169,13 @@ export class QueueManager {
         item.speedBytesPerSec = data.speedBytesPerSec;
         item.etaSeconds = data.etaSeconds;
         if (data.totalBytes && data.downloadedBytes !== null) {
-          item.percent = Math.min(100, (data.downloadedBytes / data.totalBytes) * 100);
+          const pct = Math.min(100, (data.downloadedBytes / data.totalBytes) * 100);
+          // A `bestvideo+bestaudio` job downloads two separate streams, and
+          // yt-dlp reports progress per stream — so the raw ratio drops back
+          // to 0 when the audio stream starts, making the bar visibly reset
+          // mid-download. Only ever move forwards within a single job
+          // (_runJob resets this back to 0 when a job actually restarts).
+          item.percent = Math.max(item.percent, pct);
         }
         const now = Date.now();
         if (now - lastEmit < 150 && data.status !== 'finished') return;
@@ -163,20 +190,68 @@ export class QueueManager {
         item.status = 'finished';
         item.percent = 100;
         item.filePath = result.filePath;
+        this.expiredRetryAttempted.delete(item.id);
         this._emitItemUpdate(item);
         this.currentJob = null;
         this.currentItemId = null;
         this.onEvent('queue:item-complete', { id: item.id, filePath: result.filePath, outputDir: item.outputDir });
         this._processNext();
       },
-      onError: (message) => {
-        item.status = 'error';
-        item.errorMessage = message;
-        this._emitItemUpdate(item);
-        this.currentJob = null;
-        this.currentItemId = null;
-        this._processNext();
-      }
+      onError: (message) => this._handleJobError(item, message, ytDlpPath, ffmpegPath)
     });
+  }
+
+  // yt-dlp re-extracts formats from the original page URL on every
+  // invocation (see downloader.js buildArgs()/DownloadJob) — VirPull never
+  // hands it a stale, previously-extracted media URL. So when a failure is
+  // classified as an expired/gone link, simply re-running the same item
+  // already gets a fresh extraction; no separate "refresh" step is needed.
+  // We do this exactly once per item to avoid looping against a source
+  // that's genuinely down/broken for other reasons.
+  _handleJobError(item, message, ytDlpPath, ffmpegPath) {
+    if (message === EXPIRED_LINK_KEY && !this.expiredRetryAttempted.has(item.id)) {
+      this.expiredRetryAttempted.add(item.id);
+      devLog('[Download] Link appeared expired — re-extracting from the original URL and retrying once');
+      this.currentJob = null;
+      this.currentItemId = null;
+      this._runJob(item, ytDlpPath, ffmpegPath);
+      return;
+    }
+
+    // Reaching here with EXPIRED_LINK_KEY means the retry branch above
+    // already ran once for this item and it failed the same way again —
+    // say so plainly instead of repeating "link expired" as if VirPull had
+    // never tried to refresh it.
+    const finalMessage = message === EXPIRED_LINK_KEY ? 'errors.expiredLinkRetryFailed' : message;
+
+    item.status = 'error';
+    item.errorMessage = finalMessage;
+    this.expiredRetryAttempted.delete(item.id);
+    this._emitItemUpdate(item);
+    this.currentJob = null;
+    this.currentItemId = null;
+    this._processNext();
+  }
+
+  // Manual re-run of a failed item, e.g. from the queue UI's "Try again"
+  // action — same url/settings, fresh yt-dlp invocation (and therefore
+  // fresh extraction) just like the automatic retry above.
+  retry(id) {
+    const item = this._findItem(id);
+    if (!item || item.status !== 'error') return false;
+
+    item.status = 'queued';
+    item.errorMessage = null;
+    item.percent = 0;
+    item.downloadedBytes = null;
+    item.totalBytes = null;
+    item.speedBytesPerSec = null;
+    item.etaSeconds = null;
+    this.expiredRetryAttempted.delete(id);
+    this._emitItemUpdate(item);
+
+    if (!this.pendingIds.includes(id)) this.pendingIds.push(id);
+    this._processNext();
+    return true;
   }
 }

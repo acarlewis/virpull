@@ -60,19 +60,25 @@ function findFileRecursive(dir, filename) {
   return null;
 }
 
-async function ensureYtDlp() {
-  if (fs.existsSync(YTDLP_PATH)) {
-    console.log('yt-dlp.exe already present, skipping.');
+// yt-dlp goes stale quickly: sites rotate their player/signature schemes
+// every few weeks, and a build from before a rotation still extracts
+// metadata fine but gets its media fetches rejected with HTTP 403. Since
+// this script normally skips an existing binary, a stale yt-dlp would
+// otherwise survive every rebuild and get shipped in packaged releases —
+// run with `--force` (npm run setup:binaries -- --force) to refresh it.
+async function ensureYtDlp({ force }) {
+  if (fs.existsSync(YTDLP_PATH) && !force) {
+    console.log('yt-dlp.exe already present, skipping (use --force to refresh).');
     return;
   }
-  console.log('Downloading yt-dlp.exe ...');
+  console.log(force ? 'Refreshing yt-dlp.exe ...' : 'Downloading yt-dlp.exe ...');
   await downloadFile(YTDLP_URL, YTDLP_PATH, 'yt-dlp.exe');
   console.log('yt-dlp.exe downloaded.');
 }
 
-async function ensureFfmpeg() {
-  if (fs.existsSync(FFMPEG_PATH)) {
-    console.log('ffmpeg.exe already present, skipping.');
+async function ensureFfmpeg({ force }) {
+  if (fs.existsSync(FFMPEG_PATH) && !force) {
+    console.log('ffmpeg.exe already present, skipping (use --force to refresh).');
     return;
   }
   if (process.platform !== 'win32') {
@@ -112,10 +118,13 @@ async function ensureFfmpeg() {
 async function main() {
   fs.mkdirSync(BINARIES_DIR, { recursive: true });
   const isPostinstall = process.env.npm_lifecycle_event === 'postinstall';
+  // Never force during postinstall — that would re-download ~200 MB of
+  // FFmpeg on every `npm install`.
+  const force = !isPostinstall && process.argv.includes('--force');
 
   try {
-    await ensureYtDlp();
-    await ensureFfmpeg();
+    await ensureYtDlp({ force });
+    await ensureFfmpeg({ force });
     console.log('\nBinaries are ready in resources/binaries/.');
   } catch (err) {
     console.error(`\nCould not fetch binaries automatically: ${err.message}`);

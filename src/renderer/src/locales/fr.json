@@ -13,7 +13,8 @@
       "p360": "360p"
     },
     "format": { "label": "Format", "mp4": "MP4", "mkv": "MKV", "webm": "WEBM", "mp3": "MP3 (audio uniquement)" },
-    "addToQueue": "Ajouter à la file d'attente"
+    "addToQueue": "Ajouter à la file d'attente",
+    "download": "Télécharger"
   },
   "qualityMode": {
     "label": "Mode de qualité",
@@ -37,8 +38,6 @@
     "suffix": "introuvable(s). Voir les paramètres pour plus de détails."
   },
   "analysis": {
-    "analyzeButton": "Analyser",
-    "analyzeButtonBusy": "Analyse…",
     "analyzing": "Analyse en cours…",
     "qualitiesFound": "{count} qualités disponibles pour cette vidéo",
     "untitled": "Vidéo sans titre",
@@ -71,6 +70,7 @@
     },
     "cancel": "Annuler",
     "remove": "Supprimer",
+    "retry": "Réessayer",
     "openFolder": "Ouvrir le dossier",
     "left": "restant"
   },
@@ -157,6 +157,10 @@
     "notYetAvailable": "Cette vidéo n'est pas encore disponible (avant-première ou diffusion en direct à venir).",
     "videoUnavailable": "Cette vidéo n'est pas disponible. Elle a peut-être été supprimée ou rendue privée.",
     "expiredLink": "Le lien de téléchargement a expiré. Veuillez obtenir une nouvelle URL vidéo et réessayer.",
+    "expiredLinkRetryFailed": "Téléchargement impossible. L'URL de la vidéo n'a pas pu être actualisée — réessayez dans un instant ou obtenez un nouveau lien depuis la page source.",
+    "authRequired": "Le site source exige une connexion pour accéder à cette vidéo.",
+    "extractorOutdated": "Les informations de la vidéo ont été chargées, mais le serveur a refusé le téléchargement lui-même. Cela signifie généralement que le yt-dlp fourni est obsolète — ouvrez Paramètres → Infos, cliquez sur « Mettre à jour yt-dlp », puis réessayez.",
+    "forbidden": "Accès refusé. Le serveur source a rejeté la demande de téléchargement (403 Forbidden). La vidéo peut nécessiter un accès depuis le site d'origine, une session valide ou une région prise en charge.",
     "notFound": "La vidéo est introuvable à cette URL.",
     "unsupportedUrl": "Cette URL n'est pas prise en charge.",
     "network": "Erreur réseau. Vérifiez votre connexion internet et réessayez.",

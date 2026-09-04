@@ -3,6 +3,12 @@ import { i18n, translateMessage, translateIpcError } from '../i18n';
 import { quickRecognize } from '../utils/urlRecognition';
 import { recommendQuality } from '../utils/recommendation';
 
+// Debounces the auto-analyze triggered by onUrlChanged() so a paste (one
+// value change) analyzes right away while character-by-character typing
+// doesn't fire an IPC/yt-dlp call per keystroke. Module-level rather than
+// store state since it's a timer handle, not app data.
+let urlAnalyzeTimer = null;
+
 export const useQueueStore = defineStore('queue', {
   state: () => ({
     ready: false,
@@ -16,7 +22,7 @@ export const useQueueStore = defineStore('queue', {
     downloadSpeedLimit: null, // null (unlimited) | yt-dlp --limit-rate value, e.g. '5M'
     formError: '',
 
-    // URL analysis (explicit Analyze button — see analyzeUrl())
+    // URL analysis (auto-triggered on paste/edit — see onUrlChanged())
     analysis: {
       status: 'idle', // 'idle' | 'analyzing' | 'ready' | 'error'
       data: null,
@@ -229,10 +235,19 @@ export const useQueueStore = defineStore('queue', {
 
     // A URL edit invalidates whatever was previously analyzed/selected —
     // reset rather than risk showing stale metadata or an out-of-range
-    // quality for the new URL.
+    // quality for the new URL. Then, if it looks like a real URL, kick off
+    // analysis automatically (debounced — see urlAnalyzeTimer) instead of
+    // waiting for an explicit user action.
     onUrlChanged() {
       this.analysis = { status: 'idle', data: null, errorMessage: '' };
       this._applyQualityMode();
+
+      clearTimeout(urlAnalyzeTimer);
+      const trimmed = this.url.trim();
+      if (!trimmed || quickRecognize(trimmed)?.type === 'invalid') return;
+      urlAnalyzeTimer = setTimeout(() => {
+        if (this.url.trim() === trimmed) this.analyzeUrl();
+      }, 400);
     },
 
     async analyzeUrl() {
@@ -303,6 +318,10 @@ export const useQueueStore = defineStore('queue', {
     async removeItem(id) {
       const ok = await window.api.removeQueueItem(id);
       if (ok) this.queue = this.queue.filter((i) => i.id !== id);
+    },
+
+    async retryItem(id) {
+      await window.api.retryQueueItem(id);
     },
 
     async openItemFolder(item) {

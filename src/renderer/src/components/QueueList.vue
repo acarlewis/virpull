@@ -22,6 +22,7 @@ const items = computed(() => [...store.queue].sort((a, b) => b.createdAt - a.cre
       :item="item"
       @cancel="store.cancelItem(item.id)"
       @remove="store.removeItem(item.id)"
+      @retry="store.retryItem(item.id)"
       @open-folder="store.openItemFolder(item)"
     />
   </div>

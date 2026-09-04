@@ -3,9 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { FILENAME_TEMPLATES, isValidSpeedLimit } from './settings.js';
-import { classifyError } from './errorClassifier.js';
+import { classifyError, EXPIRED_LINK_KEY } from './errorClassifier.js';
+import { devLog, redactUrl } from './devLog.js';
 
-export { classifyError };
+export { classifyError, EXPIRED_LINK_KEY };
 
 // Unique markers so we can pick our structured progress/print lines out of
 // yt-dlp's normal chatter on stdout without ambiguity.
@@ -102,6 +103,13 @@ export function buildArgs({ url, outputDir, quality, format, ffmpegPath, filenam
   const args = [
     url,
     '--newline',
+    // REQUIRED, do not remove: the `--print` below implies `--quiet`, and
+    // yt-dlp's quiet mode also switches off progress reporting — which
+    // silently killed every --progress-template line, leaving the UI stuck
+    // at 0% for the whole download. `--progress` forces progress output
+    // even while quiet. (`--no-quiet` does NOT work here: it restores the
+    // [download]/[Merger] chatter but still emits zero progress lines.)
+    '--progress',
     '--no-color',
     '--no-playlist',
     '--windows-filenames',
@@ -147,6 +155,9 @@ export class DownloadJob {
   }
 
   start({ onProgress, onStatus, onDone, onError }) {
+    devLog('[Download] Starting download:', redactUrl(this.url));
+    devLog('[Download] Selected format: quality =', this.quality, '- format =', this.format);
+
     const args = buildArgs({
       url: this.url,
       outputDir: this.outputDir,
@@ -156,6 +167,11 @@ export class DownloadJob {
       downloadSpeedLimit: this.downloadSpeedLimit,
       ffmpegPath: this.ffmpegPath
     });
+
+    // args[0] is always the target url (see buildArgs) — every download
+    // re-runs yt-dlp against this ORIGINAL url, never a media URL captured
+    // during a prior analysis pass, so extraction happens fresh right here.
+    devLog('[Download] Starting yt-dlp:', [redactUrl(args[0]), ...args.slice(1)].join(' '));
 
     let child;
     try {
@@ -236,6 +252,7 @@ export class DownloadJob {
     });
 
     child.on('close', (code) => {
+      devLog('[Download] Process exited with code:', code);
       if (this.cancelled) {
         onStatus('cancelled');
         return;
@@ -243,13 +260,23 @@ export class DownloadJob {
       if (code === 0) {
         onDone({ filePath: this.finalFilePath });
       } else {
-        onError(classifyError(this.stderrBuffer, code));
+        const classified = classifyError(this.stderrBuffer, code);
+        devLog('[Download] Classified failure as:', classified);
+        onError(classified);
       }
     });
   }
 
   _handleStdoutLine(line, { onProgress, onStatus }) {
     if (line.startsWith(MARKER_PROGRESS + SEP)) {
+      // One-shot: confirms progress reporting is actually alive. Silence
+      // here means yt-dlp emitted no progress at all (the --progress /
+      // implied-quiet trap documented in buildArgs), which is otherwise
+      // invisible because the UI just sits at 0%.
+      if (!this._loggedFirstProgress) {
+        this._loggedFirstProgress = true;
+        devLog('[Download] Progress reporting active (first update received)');
+      }
       const [, status, downloaded, total, speed, eta] = line.split(SEP);
       onProgress({
         status,

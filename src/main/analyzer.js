@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { validateUrl } from './downloader.js';
 import { classifyError } from './errorClassifier.js';
+import { devLog, redactUrl } from './devLog.js';
 
 const ANALYZE_TIMEOUT_MS = 25000;
 const MAX_BUFFER_BYTES = 20 * 1024 * 1024;
@@ -66,8 +67,15 @@ function resolvePreview(url, extractorKey) {
 
 export function analyzeUrl(rawUrl, ytDlpPath) {
   const url = validateUrl(rawUrl);
+  devLog('[Analyzer] Starting URL analysis:', redactUrl(url));
 
   return new Promise((resolve, reject) => {
+    // Note: this is the same webpage/manifest URL the user pasted (`-J`
+    // dumps metadata only) — no per-format media URL is extracted or kept
+    // here. Nothing from this analysis pass is stored and later replayed
+    // into a download; see queue.add()/DownloadJob which re-run yt-dlp
+    // against this same original url at download time, so extraction (and
+    // any signed-URL generation a site does) always happens fresh.
     execFile(
       ytDlpPath,
       ['--no-playlist', '--no-warnings', '--no-color', '-J', url],
@@ -75,10 +83,13 @@ export function analyzeUrl(rawUrl, ytDlpPath) {
       (err, stdout, stderr) => {
         if (err) {
           if (err.killed || err.signal) {
+            devLog('[Analyzer] Timed out or killed');
             reject(new Error('errors.network'));
             return;
           }
-          reject(new Error(classifyError(stderr, err.code)));
+          const classified = classifyError(stderr, err.code);
+          devLog('[Analyzer] Failed:', classified);
+          reject(new Error(classified));
           return;
         }
         let info;
@@ -117,6 +128,14 @@ export function analyzeUrl(rawUrl, ytDlpPath) {
           if (isHls) type = 'hls';
           else if (formats.some((f) => f.hasVideo)) type = 'video';
           else if (formats.some((f) => f.hasAudio)) type = 'audio';
+
+          devLog('[Analyzer] Platform detected:', extractorKey || '(generic)', '- type:', type, '- isHls:', isHls);
+          devLog(
+            '[Analyzer] Formats found:',
+            formats.length,
+            '- heights:',
+            [...new Set(formats.filter((f) => f.hasVideo && f.height).map((f) => f.height))].sort((a, b) => b - a)
+          );
 
           resolve({
             supported: true,

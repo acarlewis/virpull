@@ -13,7 +13,8 @@
       "p360": "360p"
     },
     "format": { "label": "Format", "mp4": "MP4", "mkv": "MKV", "webm": "WEBM", "mp3": "MP3 (audio only)" },
-    "addToQueue": "Add to Queue"
+    "addToQueue": "Add to Queue",
+    "download": "Download"
   },
   "qualityMode": {
     "label": "Quality mode",
@@ -37,8 +38,6 @@
     "suffix": "not found. See Settings for details."
   },
   "analysis": {
-    "analyzeButton": "Analyze",
-    "analyzeButtonBusy": "Analyzing…",
     "analyzing": "Analyzing…",
     "qualitiesFound": "{count} quality options found for this video",
     "untitled": "Untitled video",
@@ -71,6 +70,7 @@
     },
     "cancel": "Cancel",
     "remove": "Remove",
+    "retry": "Try again",
     "openFolder": "Open folder",
     "left": "left"
   },
@@ -157,6 +157,10 @@
     "notYetAvailable": "This video is not yet available (an upcoming premiere or live stream).",
     "videoUnavailable": "This video is unavailable. It may have been removed or made private.",
     "expiredLink": "Download link has expired. Please obtain a fresh video URL and try again.",
+    "expiredLinkRetryFailed": "Unable to download. The video URL could not be refreshed — try again in a moment, or get a fresh link from the source page.",
+    "authRequired": "The source site requires you to be signed in to access this video.",
+    "extractorOutdated": "The video details loaded, but the server rejected the actual download. This usually means the bundled yt-dlp is out of date — open Settings → Info and click \"Update yt-dlp\", then try again.",
+    "forbidden": "Access denied. The source server rejected the download request (403 Forbidden). The video may require access from the original website, a valid session, or a supported region.",
     "notFound": "The video could not be found at that URL.",
     "unsupportedUrl": "This URL is not supported.",
     "network": "Network error. Check your internet connection and try again.",

@@ -9,7 +9,7 @@ const { t } = useI18n();
 const props = defineProps({
   item: { type: Object, required: true }
 });
-const emit = defineEmits(['cancel', 'remove', 'open-folder']);
+const emit = defineEmits(['cancel', 'remove', 'retry', 'open-folder']);
 
 const isTerminal = computed(() => ['finished', 'error', 'cancelled'].includes(props.item.status));
 const isActive = computed(() => isActiveStatus(props.item.status));
@@ -71,6 +71,15 @@ const fileName = computed(() => {
         @click="emit('cancel')"
       >
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+      </button>
+      <button
+        v-if="item.status === 'error'"
+        type="button"
+        class="icon-btn"
+        :title="t('queue.retry')"
+        @click="emit('retry')"
+      >
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
       </button>
       <button
         v-if="isTerminal"

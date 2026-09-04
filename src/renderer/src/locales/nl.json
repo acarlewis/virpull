@@ -13,7 +13,8 @@
       "p360": "360p"
     },
     "format": { "label": "Formaat", "mp4": "MP4", "mkv": "MKV", "webm": "WEBM", "mp3": "MP3 (alleen audio)" },
-    "addToQueue": "Toevoegen aan wachtrij"
+    "addToQueue": "Toevoegen aan wachtrij",
+    "download": "Downloaden"
   },
   "qualityMode": {
     "label": "Kwaliteitsmodus",
@@ -37,8 +38,6 @@
     "suffix": "niet gevonden. Zie Instellingen voor meer details."
   },
   "analysis": {
-    "analyzeButton": "Analyseren",
-    "analyzeButtonBusy": "Analyseren…",
     "analyzing": "Analyseren…",
     "qualitiesFound": "{count} kwaliteitsopties gevonden voor deze video",
     "untitled": "Video zonder titel",
@@ -71,6 +70,7 @@
     },
     "cancel": "Annuleren",
     "remove": "Verwijderen",
+    "retry": "Opnieuw proberen",
     "openFolder": "Map openen",
     "left": "resterend"
   },
@@ -157,6 +157,10 @@
     "notYetAvailable": "Deze video is nog niet beschikbaar (aankomende premiere of livestream).",
     "videoUnavailable": "Deze video is niet beschikbaar. Mogelijk is deze verwijderd of privé gemaakt.",
     "expiredLink": "De downloadlink is verlopen. Verkrijg een nieuwe video-URL en probeer het opnieuw.",
+    "expiredLinkRetryFailed": "Downloaden mislukt. De video-URL kon niet worden vernieuwd — probeer het straks opnieuw of haal een nieuwe link op van de bronpagina.",
+    "authRequired": "De bronsite vereist dat u bent ingelogd om deze video te bekijken.",
+    "extractorOutdated": "De videogegevens zijn geladen, maar de server heeft de download zelf geweigerd. Meestal betekent dit dat de meegeleverde yt-dlp verouderd is — ga naar Instellingen → Info, klik op \"yt-dlp bijwerken\" en probeer het opnieuw.",
+    "forbidden": "Toegang geweigerd. De bronserver heeft het downloadverzoek afgewezen (403 Forbidden). Mogelijk vereist de video toegang via de oorspronkelijke website, een geldige sessie of een ondersteunde regio.",
     "notFound": "De video kon niet worden gevonden op die URL.",
     "unsupportedUrl": "Deze URL wordt niet ondersteund.",
     "network": "Netwerkfout. Controleer uw internetverbinding en probeer het opnieuw.",
