@@ -78,7 +78,7 @@ const resolvedQualityLabel = computed(() => {
           {{ t('binariesWarning.suffix') }}
         </div>
 
-        <UrlInput v-model="store.url" :analyzing="store.isAnalyzing" @analyze="store.analyzeUrl" />
+        <UrlInput v-model="store.url" />
 
         <UrlRecognitionBadge v-if="store.url.trim()" />
 
@@ -105,7 +105,7 @@ const resolvedQualityLabel = computed(() => {
         <DownloadSpeedSelect />
 
         <div class="actions">
-          <button type="button" class="btn-primary" @click="store.addToQueue">{{ t('form.addToQueue') }}</button>
+          <button type="button" class="btn-primary" @click="store.addToQueue">{{ t('form.download') }}</button>
         </div>
 
         <ErrorBanner :message="store.formError" @dismiss="store.formError = ''" />
@@ -165,7 +165,7 @@ const resolvedQualityLabel = computed(() => {
   background-image: url('/header-bg.gif');
   background-size: cover;
   background-position: center;
-  opacity: 0.15;
+  opacity: 0.45;
   z-index: 0;
 }
 

@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('api', {
   addToQueue: (options) => ipcRenderer.invoke('queue:add', options),
   cancelQueueItem: (id) => ipcRenderer.invoke('queue:cancel', id),
   removeQueueItem: (id) => ipcRenderer.invoke('queue:remove', id),
+  retryQueueItem: (id) => ipcRenderer.invoke('queue:retry', id),
   getQueueState: () => ipcRenderer.invoke('queue:get-state'),
 
   onQueueItemUpdated: (callback) => subscribe('queue:item-updated', callback),

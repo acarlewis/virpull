@@ -188,6 +188,7 @@ export function registerIpcHandlers(mainWindow) {
 
   ipcMain.handle('queue:cancel', (_event, id) => queue.cancel(id));
   ipcMain.handle('queue:remove', (_event, id) => queue.remove(id));
+  ipcMain.handle('queue:retry', (_event, id) => queue.retry(id));
   ipcMain.handle('queue:get-state', () => queue.getState());
 
   ipcMain.handle('binaries:update-ytdlp', async () => {
